@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDC Search — Analytics</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #f6f8fa; color: #1a1a2e; }
+    header {
+      background: #1f4e79; color: white;
+      padding: 16px 32px; display: flex;
+      align-items: center; justify-content: space-between;
+    }
+    header h1 { font-size: 18px; font-weight: 600; }
+    header a { color: #bdd7ee; font-size: 13px; text-decoration: none; }
+    header a:hover { color: white; }
+    .grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; padding: 20px 32px 0; }
+    .card { background: white; border: 1px solid #dde3ea; border-radius: 8px; padding: 18px 20px; }
+    .card-label { font-size: 11px; color: #5f6b7a; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+    .card-value { font-size: 28px; font-weight: 700; color: #1f4e79; }
+    .card-sub { font-size: 12px; color: #888; margin-top: 4px; }
+    .card.green .card-value { color: #1D9E75; }
+    .card.amber .card-value { color: #BA7517; }
+    .card.coral .card-value { color: #D85A30; }
+    .section { padding: 20px 32px; }
+    .section-title { font-size: 14px; font-weight: 600; color: #1f4e79;
+                     margin-bottom: 14px; padding-bottom: 6px;
+                     border-bottom: 2px solid #ebf3fb; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .panel { background: white; border: 1px solid #dde3ea; border-radius: 8px; padding: 18px 20px; }
+    .panel-title { font-size: 13px; font-weight: 600; color: #1f4e79; margin-bottom: 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: #1f4e79; color: white; padding: 8px 12px; text-align: left; font-weight: 500; }
+    td { padding: 8px 12px; border-bottom: 1px solid #f0f4f8; }
+    tr:nth-child(even) td { background: #f8fafc; }
+    tr:hover td { background: #ebf3fb; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 10px;
+             font-size: 11px; font-weight: 600; }
+    .b-blue   { background: #ebf3fb; color: #1f4e79; }
+    .b-green  { background: #e1f5ee; color: #085041; }
+    .b-coral  { background: #faece7; color: #712b13; }
+    .b-amber  { background: #faeeda; color: #633806; }
+    .chart-wrap { position: relative; height: 220px; }
+    .empty { color: #aaa; font-size: 13px; text-align: center; padding: 30px; }
+    .domain-row { display: flex; align-items: center; gap: 10px;
+                  padding: 8px 0; border-bottom: 1px solid #f0f4f8; font-size: 13px; }
+    .domain-bar-wrap { flex: 1; background: #f0f4f8; border-radius: 4px; height: 8px; overflow: hidden; }
+    .domain-bar { height: 100%; background: #2e75b6; border-radius: 4px; transition: width .5s; }
+    .refresh-btn { background: #2e75b6; color: white; border: none; border-radius: 6px;
+                   padding: 6px 14px; font-size: 12px; cursor: pointer; margin-left: 12px; }
+    .refresh-btn:hover { background: #1f5c97; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Search Analytics Dashboard</h1>
+  <div style="display:flex;align-items:center;gap:16px">
+    <span id="last-updated" style="font-size:12px;color:#7a9fc4"></span>
+    <button class="refresh-btn" onclick="loadAll()">Refresh</button>
+    <a href="/">Back to search</a>
+  </div>
+</header>
+
+<div class="grid">
+  <div class="card">
+    <div class="card-label">Total queries</div>
+    <div class="card-value" id="total-queries">—</div>
+    <div class="card-sub">all time</div>
+  </div>
+  <div class="card green">
+    <div class="card-label">Unique queries</div>
+    <div class="card-value" id="unique-queries">—</div>
+    <div class="card-sub">distinct terms</div>
+  </div>
+  <div class="card amber">
+    <div class="card-label">Zero-result queries</div>
+    <div class="card-value" id="zero-queries">—</div>
+    <div class="card-sub">need more content</div>
+  </div>
+  <div class="card coral">
+    <div class="card-label">Total clicks</div>
+    <div class="card-value" id="total-clicks">—</div>
+    <div class="card-sub">result interactions</div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Query volume over time</div>
+  <div class="panel">
+    <div class="chart-wrap">
+      <canvas id="volume-chart"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="two-col">
+
+    <div class="panel">
+      <div class="panel-title">Top 20 queries</div>
+      <table id="top-queries-table">
+        <thead><tr><th>Query</th><th>Searches</th><th>Avg results</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div>
+      <div class="panel" style="margin-bottom:20px">
+        <div class="panel-title">Zero-result queries — content gaps</div>
+        <table id="zero-table">
+          <thead><tr><th>Query</th><th>Times searched</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Most clicked documents</div>
+        <table id="clicks-table">
+          <thead><tr><th>Title</th><th>Clicks</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Domain fetch performance</div>
+  <div class="panel">
+    <div id="domain-stats"></div>
+  </div>
+</div>
+
+<script>
+let volumeChart = null;
+
+async function loadAll() {
+  document.getElementById("last-updated").textContent =
+    "Updated: " + new Date().toLocaleTimeString();
+  await Promise.all([loadStats(), loadDomains()]);
+}
+
+async function loadStats() {
+  const resp = await fetch("/api/analytics");
+  const d    = await resp.json();
+
+  document.getElementById("total-queries").textContent  = d.total_queries.toLocaleString();
+  document.getElementById("unique-queries").textContent = d.unique_queries.toLocaleString();
+  document.getElementById("zero-queries").textContent   = d.zero_result_queries.length;
+  document.getElementById("total-clicks").textContent   = d.total_clicks.toLocaleString();
+
+  // top queries table
+  const tbody = document.querySelector("#top-queries-table tbody");
+  tbody.innerHTML = d.top_queries.map(q => `
+    <tr>
+      <td><a href="/?q=${encodeURIComponent(q.query)}" style="color:#2e75b6;text-decoration:none">
+        ${q.query}</a></td>
+      <td><span class="badge b-blue">${q.count}</span></td>
+      <td>${Math.round(q.avg_results || 0)}</td>
+    </tr>
+  `).join("") || '<tr><td colspan="3" class="empty">No queries yet</td></tr>';
+
+  // zero result queries
+  const ztbody = document.querySelector("#zero-table tbody");
+  ztbody.innerHTML = d.zero_result_queries.slice(0,10).map(q => `
+    <tr>
+      <td style="color:#D85A30">${q.query}</td>
+      <td><span class="badge b-coral">${q.count}</span></td>
+    </tr>
+  `).join("") || '<tr><td colspan="2" class="empty">None yet</td></tr>';
+
+  // clicked docs
+  const ctbody = document.querySelector("#clicks-table tbody");
+  ctbody.innerHTML = d.top_clicked.map(c => `
+    <tr>
+      <td><a href="${c.url}" target="_blank" style="color:#2e75b6;text-decoration:none">
+        ${c.title ? c.title.substring(0,45) : "Unknown"}</a></td>
+      <td><span class="badge b-green">${c.clicks}</span></td>
+    </tr>
+  `).join("") || '<tr><td colspan="2" class="empty">No clicks yet</td></tr>';
+
+  // volume chart
+  const labels = d.hourly_volume.map(h => h.hour);
+  const counts = d.hourly_volume.map(h => h.count);
+
+  if (volumeChart) volumeChart.destroy();
+  const ctx = document.getElementById("volume-chart").getContext("2d");
+  volumeChart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [{
+        label: "Queries",
+        data: counts,
+        backgroundColor: "#2e75b6",
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, ticks: { stepSize: 1 } }
+      }
+    }
+  });
+}
+
+async function loadDomains() {
+  const resp = await fetch("/api/metrics");
+  const d    = await resp.json();
+  const ds   = d.domain_stats || {};
+
+  if (!Object.keys(ds).length) {
+    document.getElementById("domain-stats").innerHTML =
+      '<div class="empty">No domain data yet — run a crawl first</div>';
+    return;
+  }
+
+  const maxFetches = Math.max(...Object.values(ds).map(v => v.fetches));
+  document.getElementById("domain-stats").innerHTML = Object.entries(ds)
+    .sort((a,b) => b[1].fetches - a[1].fetches)
+    .map(([domain, stats]) => `
+      <div class="domain-row">
+        <span style="width:200px;font-weight:500">${domain}</span>
+        <div class="domain-bar-wrap">
+          <div class="domain-bar" style="width:${Math.round(stats.fetches/maxFetches*100)}%"></div>
+        </div>
+        <span class="badge b-blue" style="width:60px;text-align:center">${stats.fetches}</span>
+        <span class="badge b-green" style="width:70px;text-align:center">p50: ${stats.p50_ms}ms</span>
+        <span class="badge b-amber" style="width:70px;text-align:center">p95: ${stats.p95_ms}ms</span>
+        <span class="badge b-coral" style="width:70px;text-align:center">err: ${stats.error_rate}%</span>
+      </div>
+    `).join("");
+}
+
+loadAll();
+setInterval(loadAll, 30000);
+</script>
+</body>
+</html>

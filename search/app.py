@@ -307,6 +307,49 @@ def api_reindex():
     return jsonify({"status": "started",
                     "message": "Incremental index running in background"})
 
+@app.route("/analytics")
+def analytics():
+    return render_template("analytics.html")
+
+
+@app.route("/api/analytics")
+def api_analytics():
+    from db.database import (get_top_queries, get_zero_result_queries,
+                              get_top_clicked_docs, get_conn)
+    conn = get_conn()
+
+    total_queries = conn.execute(
+        "SELECT COUNT(*) FROM query_log"
+    ).fetchone()[0]
+
+    unique_queries = conn.execute(
+        "SELECT COUNT(DISTINCT query) FROM query_log"
+    ).fetchone()[0]
+
+    total_clicks = conn.execute(
+        "SELECT COUNT(*) FROM click_log"
+    ).fetchone()[0]
+
+    # hourly query volume (last 24 hours)
+    hourly = conn.execute("""
+        SELECT strftime('%H:00', timestamp) as hour,
+               COUNT(*) as count
+        FROM query_log
+        WHERE timestamp >= datetime('now', '-24 hours')
+        GROUP BY hour
+        ORDER BY hour
+    """).fetchall()
+
+    return jsonify({
+        "total_queries":       total_queries,
+        "unique_queries":      unique_queries,
+        "total_clicks":        total_clicks,
+        "top_queries":         get_top_queries(20),
+        "zero_result_queries": get_zero_result_queries(10),
+        "top_clicked":         get_top_clicked_docs(10),
+        "hourly_volume":       [dict(r) for r in hourly],
+    })
+
 if __name__ == "__main__":
     print("Search engine running at http://localhost:5000")
     app.run(debug=False, port=5000)
