@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDC Search Engine</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: Arial, sans-serif;
+      background: #f6f8fa;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1f4e79;
+      color: white;
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    header h1 { font-size: 20px; font-weight: 600; letter-spacing: 0.5px; }
+    header span { font-size: 13px; color: #bdd7ee; margin-left: auto; }
+
+    .search-bar {
+      background: white;
+      border-bottom: 1px solid #dde3ea;
+      padding: 20px 32px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .search-bar input {
+      flex: 1;
+      max-width: 600px;
+      padding: 10px 16px;
+      font-size: 15px;
+      border: 1.5px solid #c2ccd6;
+      border-radius: 6px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .search-bar input:focus { border-color: #2e75b6; }
+
+    .search-bar button {
+      padding: 10px 24px;
+      background: #2e75b6;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .search-bar button:hover { background: #1f5c97; }
+
+    .stats {
+      padding: 10px 32px;
+      font-size: 13px;
+      color: #5f6b7a;
+      background: white;
+      border-bottom: 1px solid #dde3ea;
+    }
+
+    .stats strong { color: #1f4e79; }
+
+    main { padding: 24px 32px; max-width: 860px; }
+
+    .result-count {
+      font-size: 13px;
+      color: #5f6b7a;
+      margin-bottom: 18px;
+    }
+
+    .result {
+      background: white;
+      border: 1px solid #dde3ea;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 12px;
+      transition: box-shadow 0.15s;
+    }
+
+    .result:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+    .result-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1f4e79;
+      margin-bottom: 4px;
+    }
+
+    .result-url {
+      font-size: 12px;
+      color: #2e75b6;
+      margin-bottom: 8px;
+      word-break: break-all;
+      text-decoration: none;
+    }
+
+    .result-url:hover { text-decoration: underline; }
+
+    .result-meta {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      color: #888;
+    }
+
+    .score-badge {
+      background: #ebf3fb;
+      color: #1f4e79;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 12px;
+    }
+
+    .no-results {
+      text-align: center;
+      padding: 60px 20px;
+      color: #888;
+    }
+
+    .no-results h3 { font-size: 18px; margin-bottom: 8px; color: #555; }
+
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: #aaa;
+    }
+
+    .empty-state h2 { font-size: 22px; color: #1f4e79; margin-bottom: 10px; }
+    .empty-state p  { font-size: 14px; margin-top: 6px; }
+
+    .tag {
+      background: #f0f4f8;
+      border: 1px solid #dde3ea;
+      border-radius: 4px;
+      padding: 1px 7px;
+      font-size: 11px;
+      color: #5f6b7a;
+    }
+
+    .result-snippet {
+      font-size: 13px;
+      color: var(--color-text-secondary, #555);
+      line-height: 1.6;
+      margin-bottom: 8px;
+    }
+
+    .result-snippet mark {
+      background: #fff3cd;
+      color: #1a1a2e;
+      padding: 0 2px;
+      border-radius: 2px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>PDC Distributed Search Engine</h1>
+  <span>Distributed Web Crawler + MapReduce Indexer</span>
+</header>
+
+<div class="search-bar">
+  <form method="GET" action="/" style="display:flex;gap:10px;flex:1;align-items:center;position:relative">
+    <div style="flex:1;max-width:600px;position:relative">
+      <input
+        type="text"
+        name="q"
+        id="search-input"
+        value="{{ query }}"
+        placeholder="Search indexed pages..."
+        autofocus
+        autocomplete="off"
+      >
+      <div id="suggestions" style="
+        display:none;
+        position:absolute;
+        top:100%;
+        left:0;
+        right:0;
+        background:white;
+        border:1.5px solid #2e75b6;
+        border-top:none;
+        border-radius:0 0 6px 6px;
+        z-index:100;
+        max-height:280px;
+        overflow-y:auto;
+        box-shadow:0 4px 12px rgba(0,0,0,0.1);
+      "></div>
+    </div>
+    <button type="submit">Search</button>
+  </form>
+</div>
+
+<div class="stats">
+  Index: <strong>{{ total_terms }}</strong> unique terms
+  across <strong>{{ total_docs }}</strong> crawled documents
+</div>
+
+{% if corrected_query %}
+<div style="
+  background: #fff8e1;
+  border-bottom: 1px solid #ffe082;
+  padding: 10px 32px;
+  font-size: 13px;
+  color: #5f4b00;
+">
+  Did you mean:
+  <a href="/?q={{ corrected_query }}" style="
+    color: #1f4e79;
+    font-weight: 600;
+    text-decoration: none;
+  ">{{ corrected_query }}</a>?
+  {% for orig, fix in spell_corrections.items() %}
+    <span style="color:#888;margin-left:8px">
+      "{{ orig }}" corrected to "{{ fix }}"
+    </span>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if expansions_map %}
+<div style="
+  background: #f0f7ff;
+  border-bottom: 1px solid #b8d4f0;
+  padding: 8px 32px;
+  font-size: 12px;
+  color: #1f4e79;
+">
+  Query expanded with related terms:
+  {% for term, syns in expansions_map.items() %}
+    <strong>{{ term }}</strong> +
+    {% for s in syns %}
+      <span style="color:#2e75b6">{{ s }}</span>{% if not loop.last %}, {% endif %}
+    {% endfor %}
+    {% if not loop.last %} &nbsp;|&nbsp; {% endif %}
+  {% endfor %}
+</div>
+{% endif %}
+
+<main>
+
+  {% if query %}
+    {% if results %}
+      <div class="result-count">
+        {{ results|length }} result(s) for "<strong>{{ query }}</strong>"
+      </div>
+
+      {% for r in results %}
+      <div class="result" data-doc-id="{{ r.doc_id }}">
+        <div class="result-title">{{ r.title }}</div>
+        <a class="result-url" href="{{ r.url }}" target="_blank">{{ r.url }}</a>
+        {% if r.snippet %}
+        <div class="result-snippet">{{ r.snippet|safe }}</div>
+        {% endif %}
+        <div class="result-meta">
+          <span class="tag">doc #{{ r.doc_id }}</span>
+          <span class="score-badge">score: {{ r.score }}</span>
+          <span class="tag">bm25: {{ r.bm25 }}</span>
+          <span class="tag">semantic: {{ r.semantic }}</span>
+          <span class="tag">pr: {{ r.pagerank }}</span>
+        </div>
+      </div>
+      {% endfor %}
+
+    {% else %}
+      <div class="no-results">
+        <h3>No results for "{{ query }}"</h3>
+        <p>Try a different keyword — the index contains {{ total_terms }} terms.</p>
+      </div>
+    {% endif %}
+
+  {% else %}
+    <div class="empty-state">
+      <h2>What are you looking for?</h2>
+      <p>This search engine has indexed <strong>{{ total_docs }}</strong> pages.</p>
+      <p>Try searching: <em>fiction</em>, <em>history</em>, <em>science</em>, <em>books</em></p>
+    </div>
+  {% endif %}
+
+</main>
+
+<script>
+const input = document.getElementById("search-input");
+const box   = document.getElementById("suggestions");
+let active  = -1;
+let items   = [];
+
+input.addEventListener("input", async () => {
+  const val = input.value.trim();
+  const lastWord = val.split(" ").pop();
+
+  if (lastWord.length < 2) {
+    box.style.display = "none";
+    return;
+  }
+
+  const resp = await fetch(`/api/suggest?prefix=${encodeURIComponent(lastWord)}`);
+  const data = await resp.json();
+  items  = data.suggestions || [];
+  active = -1;
+
+  if (items.length === 0) {
+    box.style.display = "none";
+    return;
+  }
+
+  box.innerHTML = items.map((s, i) => `
+    <div class="suggestion-item" data-idx="${i}" style="
+      padding:9px 14px;
+      cursor:pointer;
+      font-size:14px;
+      color:#1a1a2e;
+      border-bottom:1px solid #f0f0f0;
+    ">${s}</div>
+  `).join("");
+
+  box.querySelectorAll(".suggestion-item").forEach(el => {
+    el.addEventListener("mouseenter", () => {
+      box.querySelectorAll(".suggestion-item").forEach(e => e.style.background = "");
+      el.style.background = "#ebf3fb";
+    });
+    el.addEventListener("mouseleave", () => {
+      el.style.background = "";
+    });
+    el.addEventListener("mousedown", e => {
+      e.preventDefault();
+      const words   = input.value.split(" ");
+      words[words.length - 1] = el.textContent;
+      input.value = words.join(" ");
+      box.style.display = "none";
+      input.focus();
+    });
+  });
+
+  box.style.display = "block";
+});
+
+input.addEventListener("keydown", e => {
+  const rows = box.querySelectorAll(".suggestion-item");
+  if (e.key === "ArrowDown") {
+    e.preventDefault();
+    active = Math.min(active + 1, rows.length - 1);
+  } else if (e.key === "ArrowUp") {
+    e.preventDefault();
+    active = Math.max(active - 1, -1);
+  } else if (e.key === "Enter" && active >= 0) {
+    e.preventDefault();
+    const words = input.value.split(" ");
+    words[words.length - 1] = rows[active].textContent;
+    input.value = words.join(" ");
+    box.style.display = "none";
+  } else if (e.key === "Escape") {
+    box.style.display = "none";
+    active = -1;
+  }
+  rows.forEach((r, i) => r.style.background = i === active ? "#ebf3fb" : "");
+});
+
+document.addEventListener("click", e => {
+  if (!e.target.closest(".search-bar")) box.style.display = "none";
+});
+</script>
+
+<script>
+// track result clicks for feedback loop
+document.querySelectorAll(".result").forEach((el, position) => {
+  el.addEventListener("click", () => {
+    const query = new URLSearchParams(window.location.search).get("q") || "";
+    const docId = el.dataset.docId;
+    if (query && docId) {
+      fetch("/api/click", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({query, doc_id: parseInt(docId), position})
+      });
+    }
+  });
+});
+</script>
+
+</body>
+</html>
