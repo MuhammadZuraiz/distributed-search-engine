@@ -6824,3 +6824,35 @@ ling_blocks"}
 {"ts": 1774907975.36202, "iso": "2026-03-30T21:59:35", "level": "INFO", "logger": "indexer", "message": "Documents    : 939"}
 {"ts": 1774907975.3635712, "iso": "2026-03-30T21:59:35", "level": "INFO", "logger": "indexer", "message": "Top PageRank : [(8, 1.0), (17, 1.0), (20, 1.0), (21, 1.0), (5, 0.994869)]"}
 {"ts": 1774907975.3656878, "iso": "2026-03-30T21:59:35", "level": "INFO", "logger": "indexer", "message": "------------------------------------------------------------"}
+{"ts": 1774999248.76218, "iso": "2026-03-31T23:20:48", "level": "INFO", "logger": "indexer", "message": "MapReduce indexing started \u2014 6 mapper(s)"}
+{"ts": 1774999248.774739, "iso": "2026-03-31T23:20:48", "level": "INFO", "logger": "indexer", "message": "Mapper 5: processing 156 documents from DB"}
+{"ts": 1774999248.7952538, "iso": "2026-03-31T23:20:48", "level": "INFO", "logger": "indexer", "message": "Mapper 1: processing 157 documents from DB"}
+{"ts": 1774999248.799525, "iso": "2026-03-31T23:20:48", "level": "INFO", "logger": "indexer", "message": "Mapper 3: processing 157 documents from DB"}
+{"ts": 1774999248.829825, "iso": "2026-03-31T23:20:48", "level": "INFO", "logger": "indexer", "message": "Mapper 6: processing 156 documents from DB"}
+{"ts": 1774999248.834189, "iso": "2026-03-31T23:20:48", "level": "INFO", "logger": "indexer", "message": "Mapper 2: processing 157 documents from DB"}
+{"ts": 1774999248.9627786, "iso": "2026-03-31T23:20:48", "level": "INFO", "logger": "indexer", "message": "Mapper 4: processing 156 documents from DB"}
+{"ts": 1774999249.1490252, "iso": "2026-03-31T23:20:49", "level": "INFO", "logger": "indexer", "message": "Mapper 5: emitting 415,955 pairs"}
+{"ts": 1774999249.206459, "iso": "2026-03-31T23:20:49", "level": "INFO", "logger": "indexer", "message": "Mapper 3: emitting 448,596 pairs"}
+{"ts": 1774999249.2207263, "iso": "2026-03-31T23:20:49", "level": "INFO", "logger": "indexer", "message": "Mapper 2: emitting 429,891 pairs"}
+{"ts": 1774999249.2310426, "iso": "2026-03-31T23:20:49", "level": "INFO", "logger": "indexer", "message": "Mapper 6: emitting 465,001 pairs"}
+{"ts": 1774999249.2449133, "iso": "2026-03-31T23:20:49", "level": "INFO", "logger": "indexer", "message": "Mapper 1: emitting 439,629 pairs"}
+{"ts": 1774999249.2879546, "iso": "2026-03-31T23:20:49", "level": "INFO", "logger": "indexer", "message": "Mapper 4: emitting 440,838 pairs"}
+{"ts": 1774999250.0988057, "iso": "2026-03-31T23:20:50", "level": "INFO", "logger": "indexer", "message": "  received 439,629 pairs from mapper 1"}
+{"ts": 1774999250.104825, "iso": "2026-03-31T23:20:50", "level": "INFO", "logger": "indexer", "message": "  received 429,891 pairs from mapper 2"}
+{"ts": 1774999250.111572, "iso": "2026-03-31T23:20:50", "level": "INFO", "logger": "indexer", "message": "  received 448,596 pairs from mapper 3"}
+{"ts": 1774999250.1192002, "iso": "2026-03-31T23:20:50", "level": "INFO", "logger": "indexer", "message": "  received 440,838 pairs from mapper 4"}
+{"ts": 1774999250.12922, "iso": "2026-03-31T23:20:50", "level": "INFO", "logger": "indexer", "message": "  received 415,955 pairs from mapper 5"}
+{"ts": 1774999250.2177083, "iso": "2026-03-31T23:20:50", "level": "INFO", "logger": "indexer", "message": "  received 465,001 pairs from mapper 6"}
+{"ts": 1774999250.2387784, "iso": "2026-03-31T23:20:50", "level": "INFO", "logger": "indexer", "message": "Total pairs: 2,639,910 \u2014 running reduce..."}
+{"ts": 1774999253.0684142, "iso": "2026-03-31T23:20:53", "level": "INFO", "logger": "indexer", "message": "Computing PageRank..."}
+{"ts": 1774999254.0277529, "iso": "2026-03-31T23:20:54", "level": "INFO", "logger": "indexer", "message": "PageRank saved: 939 scores"}
+{"ts": 1774999254.0315175, "iso": "2026-03-31T23:20:54", "level": "INFO", "logger": "indexer", "message": "Building BERT embeddings + FAISS index..."}
+{"ts": 1774999325.1298287, "iso": "2026-03-31T23:22:05", "level": "INFO", "logger": "indexer", "message": "BERT embeddings built and cached"}
+{"ts": 1774999325.1309867, "iso": "2026-03-31T23:22:05", "level": "INFO", "logger": "indexer", "message": "Building TF-IDF fallback vectors..."}
+{"ts": 1774999342.8052351, "iso": "2026-03-31T23:22:22", "level": "INFO", "logger": "indexer", "message": "TF-IDF matrix: (939, 30000)"}
+{"ts": 1774999342.993114, "iso": "2026-03-31T23:22:22", "level": "INFO", "logger": "indexer", "message": "------------------------------------------------------------"}
+{"ts": 1774999342.9947004, "iso": "2026-03-31T23:22:22", "level": "INFO", "logger": "indexer", "message": "Indexing complete in 94.23s"}
+{"ts": 1774999342.9959552, "iso": "2026-03-31T23:22:22", "level": "INFO", "logger": "indexer", "message": "Unique terms : 99,752"}
+{"ts": 1774999342.9972575, "iso": "2026-03-31T23:22:22", "level": "INFO", "logger": "indexer", "message": "Documents    : 939"}
+{"ts": 1774999342.9988525, "iso": "2026-03-31T23:22:22", "level": "INFO", "logger": "indexer", "message": "Top PageRank : [(8, 1.0), (17, 1.0), (20, 1.0), (21, 1.0), (5, 0.994869)]"}
+{"ts": 1774999343.0006006, "iso": "2026-03-31T23:22:23", "level": "INFO", "logger": "indexer", "message": "------------------------------------------------------------"}

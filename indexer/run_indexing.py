@@ -121,31 +121,35 @@ def run():
                       f, ensure_ascii=False)
         log.info(f"PageRank saved: {len(pr_scores)} scores")
 
-        # ── semantic vectors from DB ──────────────────────────────────────
-        log.info("Building semantic TF-IDF vectors from DB...")
+        # ── BERT embeddings + FAISS ───────────────────────────────────────
+        log.info("Building BERT embeddings + FAISS index...")
+        import sys
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+        from search.embeddings import build_embeddings
+        build_embeddings()
+        log.info("BERT embeddings built and cached")
+
+        # ── TF-IDF semantic vectors (kept as fallback) ────────────────────
+        log.info("Building TF-IDF fallback vectors...")
         from sklearn.feature_extraction.text import TfidfVectorizer
-        import pickle
-        import numpy as np
+        import pickle as pkl
 
         corpus  = []
-        doc_ids = []
+        doc_ids_list = []
         for doc in get_all_documents():
-            text = doc.get("title", "") + " " + doc.get("text", "")
-            corpus.append(text)
-            doc_ids.append(doc["doc_id"])
+            corpus.append(doc.get("title","") + " " + doc.get("text",""))
+            doc_ids_list.append(doc["doc_id"])
 
         vectorizer = TfidfVectorizer(
             max_features=30000, stop_words="english",
-            ngram_range=(1, 2), min_df=2, sublinear_tf=True
+            ngram_range=(1,2), min_df=2, sublinear_tf=True
         )
         matrix = vectorizer.fit_transform(corpus)
-        log.info(f"Semantic matrix: {matrix.shape}")
-
         VECTOR_CACHE = "data/index/tfidf_vectors.pkl"
         with open(VECTOR_CACHE, "wb") as f:
-            pickle.dump({"vectorizer": vectorizer,
-                         "matrix": matrix, "doc_ids": doc_ids}, f)
-        log.info("Semantic vectors cached")
+            pkl.dump({"vectorizer": vectorizer,
+                      "matrix": matrix, "doc_ids": doc_ids_list}, f)
+        log.info(f"TF-IDF matrix: {matrix.shape}")
 
         # ── URL map from DB ───────────────────────────────────────────────
         url_map = build_url_map_from_db()
@@ -155,7 +159,7 @@ def run():
 
         # ── mark all docs as indexed ──────────────────────────────────────
         from db.database import mark_indexed
-        for doc_id in doc_ids:
+        for doc_id in doc_ids_list:
             mark_indexed(doc_id, 0)
 
         elapsed = time.time() - start

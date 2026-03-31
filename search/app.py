@@ -14,6 +14,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from flask import Flask, request, render_template, jsonify
 from search.bm25 import BM25
 from trie import build_trie
+
+from embeddings import BERTSearcher
 from semantic import SemanticSearcher
 
 from db.database import init_db, get_url_map, log_query, log_click, get_click_boost
@@ -55,9 +57,18 @@ print("Spell corrector ready")
 EXPANDER = QueryExpander(INDEX)
 print("Query expander ready")
 
-print("Loading semantic search vectors...")
+print("Loading BERT embeddings...")
+try:
+    BERT = BERTSearcher()
+    USE_BERT = True
+    print("BERT search ready")
+except Exception as e:
+    print(f"BERT unavailable ({e}), falling back to TF-IDF")
+    BERT     = None
+    USE_BERT = False
+
+print("Loading TF-IDF fallback vectors...")
 SEMANTIC = SemanticSearcher()
-print("Semantic search ready")
 
 TOTAL_DOCS = len(URL_MAP)
 
@@ -77,35 +88,50 @@ def highlight(text, query):
 
 def blended_search(query, expanded_query=None, top_n=20):
     terms  = query.strip().split()
-    bm25_w = 0.85 if len(terms) == 1 else 0.70
-    sem_w  = 1 - bm25_w
+    bm25_w = 0.75 if len(terms) == 1 else 0.60
+    bert_w = 0.25 if USE_BERT else 0
+    tfidf_w = 0 if USE_BERT else (1 - bm25_w)
 
-    # use expanded query for BM25 if available
     search_query = expanded_query or query
 
+    # BM25
     bm25_results = RANKER.score(search_query, top_n=top_n * 2)
     bm25_map     = {r["doc_id"]: r for r in bm25_results}
-
     if bm25_results:
         max_bm25 = max(r["score"] for r in bm25_results) or 1
         for r in bm25_results:
             r["bm25_norm"] = r["score"] / max_bm25
-    else:
-        max_bm25 = 1
 
-    # semantic search uses original query (not expanded — avoids noise)
-    sem_results = SEMANTIC.search(query, top_n=top_n * 2)
-    sem_map     = {doc_id: score for doc_id, score in sem_results
-                   if score > 0.05}
-    max_sem     = max(sem_map.values()) if sem_map else 1
+    # BERT semantic
+    bert_map = {}
+    if USE_BERT and BERT:
+        bert_results = BERT.search(query, top_n=top_n * 2)
+        bert_map     = {doc_id: score for doc_id, score in bert_results
+                        if score > 0.2}   # higher threshold for BERT
+        max_bert     = max(bert_map.values()) if bert_map else 1
+        bert_map     = {d: s/max_bert for d, s in bert_map.items()}
 
-    all_ids = set(bm25_map.keys()) | set(sem_map.keys())
+    # TF-IDF fallback
+    tfidf_map = {}
+    if not USE_BERT:
+        tfidf_results = SEMANTIC.search(query, top_n=top_n * 2)
+        tfidf_map     = {doc_id: score for doc_id, score in tfidf_results
+                         if score > 0.05}
+        max_tfidf     = max(tfidf_map.values()) if tfidf_map else 1
+        tfidf_map     = {d: s/max_tfidf for d, s in tfidf_map.items()}
+
+    all_ids = (set(bm25_map.keys()) |
+               set(bert_map.keys()) |
+               set(tfidf_map.keys()))
+
     blended = []
-
     for doc_id in all_ids:
-        bm25_norm = bm25_map[doc_id]["bm25_norm"] if doc_id in bm25_map else 0
-        sem_norm  = sem_map[doc_id] / max_sem      if doc_id in sem_map  else 0
-        final     = bm25_w * bm25_norm + sem_w * sem_norm
+        bm25_norm  = bm25_map[doc_id]["bm25_norm"] if doc_id in bm25_map else 0
+        bert_norm  = bert_map.get(doc_id, 0)
+        tfidf_norm = tfidf_map.get(doc_id, 0)
+        sem_norm   = bert_norm if USE_BERT else tfidf_norm
+
+        final = bm25_w * bm25_norm + (bert_w + tfidf_w) * sem_norm
 
         meta = URL_MAP.get(str(doc_id), {})
         blended.append({
