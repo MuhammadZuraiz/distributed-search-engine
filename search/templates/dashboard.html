@@ -2,100 +2,191 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Live Crawl Dashboard</title>
+  <title>PDC Crawler — Live Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; background: #0f1923; color: #e8ecf0; min-height: 100vh; }
-    header { background: #1f4e79; padding: 16px 28px; display: flex; align-items: center; justify-content: space-between; }
-    header h1 { font-size: 18px; font-weight: 600; }
-    .live-dot { width: 10px; height: 10px; background: #1D9E75; border-radius: 50%; display: inline-block; margin-right: 6px; animation: pulse 1.2s infinite; }
+    header { background: #1f4e79; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; }
+    header h1 { font-size: 17px; font-weight: 600; }
+    .live-dot { width: 9px; height: 9px; background: #1D9E75; border-radius: 50%;
+                display: inline-block; margin-right: 7px; animation: pulse 1.2s infinite; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-    .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; padding: 20px 28px; }
-    .card { background: #1a2535; border: 1px solid #2a3a50; border-radius: 10px; padding: 18px 20px; }
-    .card-label { font-size: 11px; color: #7a8fa6; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px; }
-    .card-value { font-size: 28px; font-weight: 700; color: #e8ecf0; }
-    .card-sub { font-size: 12px; color: #7a8fa6; margin-top: 4px; }
-    .card.green .card-value { color: #1D9E75; }
-    .card.blue  .card-value { color: #378ADD; }
-    .card.amber .card-value { color: #EF9F27; }
-    .card.coral .card-value { color: #D85A30; }
-    .section { padding: 0 28px 20px; }
-    .section-title { font-size: 13px; color: #7a8fa6; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
-    .worker-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
-    .worker-card { background: #1a2535; border: 1px solid #2a3a50; border-radius: 8px; padding: 12px 14px; }
-    .worker-rank { font-size: 11px; color: #7a8fa6; margin-bottom: 6px; }
-    .worker-count { font-size: 20px; font-weight: 700; color: #378ADD; }
-    .worker-status { font-size: 11px; margin-top: 4px; }
+    .tabs { display: flex; background: #152231; border-bottom: 1px solid #1f3247; }
+    .tab { padding: 11px 24px; font-size: 13px; cursor: pointer; color: #7a8fa6;
+           border-bottom: 2px solid transparent; transition: all .2s; }
+    .tab.active { color: #e8ecf0; border-bottom-color: #2e75b6; }
+    .tab:hover { color: #e8ecf0; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; padding: 18px 24px 0; }
+    .card { background: #1a2535; border: 1px solid #2a3a50; border-radius: 8px; padding: 16px 18px; }
+    .card-label { font-size: 10px; color: #7a8fa6; text-transform: uppercase; letter-spacing:.06em; margin-bottom: 8px; }
+    .card-value { font-size: 26px; font-weight: 700; }
+    .card-sub { font-size: 11px; color: #7a8fa6; margin-top: 3px; }
+    .green .card-value { color: #1D9E75; }
+    .blue  .card-value { color: #378ADD; }
+    .amber .card-value { color: #EF9F27; }
+    .coral .card-value { color: #D85A30; }
+    .section { padding: 18px 24px; }
+    .section-title { font-size: 12px; color: #7a8fa6; text-transform: uppercase;
+                     letter-spacing:.06em; margin-bottom: 10px; }
+    .worker-grid { display: grid; grid-template-columns: repeat(6,1fr); gap: 8px; }
+    .worker-card { background: #1a2535; border: 1px solid #2a3a50; border-radius: 7px; padding: 10px 12px; }
+    .worker-rank { font-size: 10px; color: #7a8fa6; margin-bottom: 5px; }
+    .worker-count { font-size: 18px; font-weight: 700; color: #378ADD; }
+    .worker-status { font-size: 10px; margin-top: 3px; }
     .status-active { color: #1D9E75; }
     .status-dead   { color: #D85A30; }
-    .bar-wrap { background: #0f1923; border-radius: 4px; height: 6px; margin-top: 8px; overflow: hidden; }
-    .bar-fill { height: 100%; background: #378ADD; border-radius: 4px; transition: width 0.5s; }
-    .log-box { background: #0f1923; border: 1px solid #2a3a50; border-radius: 8px; padding: 14px 16px; font-family: monospace; font-size: 12px; color: #9fb3c8; height: 160px; overflow-y: auto; margin: 0 28px 20px; }
-    .log-line { margin-bottom: 3px; }
-    .log-line.assign { color: #378ADD; }
+    .bar-wrap { background: #0f1923; border-radius: 3px; height: 5px; margin-top: 7px; overflow: hidden; }
+    .bar-fill { height: 100%; background: #378ADD; border-radius: 3px; transition: width .5s; }
+    .log-box { background: #0a1520; border: 1px solid #1f3247; border-radius: 7px;
+               padding: 12px 14px; font-family: monospace; font-size: 11px; color: #7a8fa6;
+               height: 150px; overflow-y: auto; margin: 0 24px 18px; }
+    .log-line.assign  { color: #378ADD; }
     .log-line.receive { color: #1D9E75; }
-    .log-line.fault  { color: #D85A30; }
-    .progress-wrap { margin: 0 28px 20px; }
-    .progress-bar { background: #1a2535; border-radius: 6px; height: 12px; overflow: hidden; border: 1px solid #2a3a50; }
-    .progress-fill { height: 100%; background: linear-gradient(90deg, #1D9E75, #378ADD); transition: width 0.5s; border-radius: 6px; }
-    .progress-label { font-size: 12px; color: #7a8fa6; margin-bottom: 6px; display: flex; justify-content: space-between; }
+    .log-line.fault   { color: #D85A30; }
+    .log-line.rate    { color: #EF9F27; }
+    .progress-wrap { margin: 0 24px 14px; }
+    .progress-bar { background: #1a2535; border-radius: 5px; height: 10px; overflow: hidden; }
+    .progress-fill { height: 100%; background: linear-gradient(90deg,#1D9E75,#378ADD);
+                     transition: width .5s; border-radius: 5px; }
+    .progress-label { font-size: 11px; color: #7a8fa6; margin-bottom: 5px;
+                      display: flex; justify-content: space-between; }
+    .chart-wrap { background: #1a2535; border: 1px solid #2a3a50; border-radius: 8px;
+                  padding: 16px; margin: 0 24px 18px; height: 200px; position: relative; }
+    .domain-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .domain-table th { background: #1f3247; color: #7a8fa6; padding: 8px 12px;
+                       text-align: left; font-weight: 500; font-size: 11px; }
+    .domain-table td { padding: 9px 12px; border-bottom: 1px solid #1a2535; }
+    .domain-table tr:hover td { background: #152231; }
+    .pill { display: inline-block; padding: 2px 7px; border-radius: 8px; font-size: 10px; font-weight: 600; }
+    .pill-blue  { background: #0c2a44; color: #378ADD; }
+    .pill-green { background: #042c1e; color: #1D9E75; }
+    .pill-amber { background: #2a1800; color: #EF9F27; }
+    .pill-coral { background: #2a0a00; color: #D85A30; }
+    .empty { color: #3a4a5a; font-size: 12px; text-align: center; padding: 20px; }
   </style>
 </head>
 <body>
 
 <header>
   <h1><span class="live-dot"></span>PDC Distributed Crawler — Live Dashboard</h1>
-  <span id="clock" style="font-size:13px;color:#7a8fa6"></span>
+  <span id="clock" style="font-size:12px;color:#7a8fa6"></span>
 </header>
 
-<div class="grid">
-  <div class="card green">
-    <div class="card-label">Pages crawled</div>
-    <div class="card-value" id="pages">0</div>
-    <div class="card-sub" id="target">of 1000 target</div>
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('crawl')">Live crawl</div>
+  <div class="tab" onclick="switchTab('metrics')">Domain metrics</div>
+  <div class="tab" onclick="switchTab('throughput')">Throughput</div>
+</div>
+
+<!-- TAB 1: Live crawl -->
+<div id="tab-crawl" class="tab-content active">
+
+  <div class="grid">
+    <div class="card green">
+      <div class="card-label">Pages crawled</div>
+      <div class="card-value" id="pages">0</div>
+      <div class="card-sub" id="target">of 1000 target</div>
+    </div>
+    <div class="card blue">
+      <div class="card-label">Pages / second</div>
+      <div class="card-value" id="pps">0.00</div>
+      <div class="card-sub">throughput</div>
+    </div>
+    <div class="card amber">
+      <div class="card-label">Queue size</div>
+      <div class="card-value" id="queue">0</div>
+      <div class="card-sub">URLs pending</div>
+    </div>
+    <div class="card coral">
+      <div class="card-label">Elapsed</div>
+      <div class="card-value" id="elapsed">0s</div>
+      <div class="card-sub" id="eta">ETA: —</div>
+    </div>
   </div>
-  <div class="card blue">
-    <div class="card-label">Pages / second</div>
-    <div class="card-value" id="pps">0.00</div>
-    <div class="card-sub">throughput</div>
+
+  <div class="progress-wrap" style="margin-top:14px">
+    <div class="progress-label">
+      <span>Crawl progress</span><span id="pct">0%</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="prog-fill" style="width:0%"></div>
+    </div>
   </div>
-  <div class="card amber">
-    <div class="card-label">Queue size</div>
-    <div class="card-value" id="queue">0</div>
-    <div class="card-sub">URLs pending</div>
+
+  <div class="section">
+    <div class="section-title">Worker status</div>
+    <div class="worker-grid" id="worker-grid"></div>
   </div>
-  <div class="card coral">
-    <div class="card-label">Elapsed time</div>
-    <div class="card-value" id="elapsed">0s</div>
-    <div class="card-sub" id="eta">ETA: calculating...</div>
+
+  <div class="section" style="padding-bottom:8px">
+    <div class="section-title">Activity log</div>
+  </div>
+  <div class="log-box" id="log-box"></div>
+
+</div>
+
+<!-- TAB 2: Domain metrics -->
+<div id="tab-metrics" class="tab-content">
+  <div class="section">
+    <div class="section-title">Per-domain fetch performance (from logs/metrics.jsonl)</div>
+    <div style="background:#1a2535;border:1px solid #2a3a50;border-radius:8px;overflow:hidden;margin-top:4px">
+      <table class="domain-table">
+        <thead>
+          <tr>
+            <th>Domain</th>
+            <th>Fetches</th>
+            <th>Errors</th>
+            <th>Blocked</th>
+            <th>Error rate</th>
+            <th>p50 latency</th>
+            <th>p95 latency</th>
+            <th>p99 latency</th>
+          </tr>
+        </thead>
+        <tbody id="domain-tbody">
+          <tr><td colspan="8" class="empty">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 
-<div class="progress-wrap">
-  <div class="progress-label">
-    <span>Crawl progress</span>
-    <span id="pct">0%</span>
+<!-- TAB 3: Throughput chart -->
+<div id="tab-throughput" class="tab-content">
+  <div class="section">
+    <div class="section-title">Pages crawled over time</div>
+    <div class="chart-wrap">
+      <canvas id="throughput-chart"></canvas>
+    </div>
   </div>
-  <div class="progress-bar">
-    <div class="progress-fill" id="prog-fill" style="width:0%"></div>
+  <div class="section">
+    <div class="section-title">Worker page distribution</div>
+    <div class="chart-wrap">
+      <canvas id="worker-chart"></canvas>
+    </div>
   </div>
 </div>
-
-<div class="section">
-  <div class="section-title">Worker status</div>
-  <div class="worker-grid" id="worker-grid"></div>
-</div>
-
-<div class="section">
-  <div class="section-title">Activity log</div>
-</div>
-<div class="log-box" id="log-box"></div>
 
 <script>
-const src = new EventSource("/stream");
-const maxLog = 40;
-let logs = [];
+let logs           = [];
+let tpChart        = null;
+let workerChart    = null;
+let tpHistory      = [];
+let workerHistory  = {};
 
+function switchTab(name) {
+  document.querySelectorAll(".tab").forEach((t,i) => {
+    t.classList.toggle("active", ["crawl","metrics","throughput"][i] === name);
+  });
+  document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+  document.getElementById("tab-" + name).classList.add("active");
+  if (name === "metrics") loadDomainMetrics();
+}
+
+const src = new EventSource("/stream");
 src.onmessage = e => {
   const d = JSON.parse(e.data);
 
@@ -106,48 +197,136 @@ src.onmessage = e => {
 
   const max = d.max_pages ?? 1000;
   const pct = Math.min(100, Math.round((d.pages_crawled / max) * 100));
-  document.getElementById("pct").textContent      = pct + "%";
+  document.getElementById("pct").textContent       = pct + "%";
   document.getElementById("prog-fill").style.width = pct + "%";
-  document.getElementById("target").textContent   = `of ${max} target`;
+  document.getElementById("target").textContent    = "of " + max + " target";
 
   const pps = d.pages_per_sec ?? 0;
   const rem = max - (d.pages_crawled ?? 0);
   const eta = pps > 0 ? Math.round(rem / pps) : null;
-  document.getElementById("eta").textContent = eta ? `ETA: ~${eta}s` : "ETA: calculating...";
+  document.getElementById("eta").textContent = eta ? "ETA: ~" + eta + "s" : "ETA: —";
 
   // workers
   const wg = document.getElementById("worker-grid");
   wg.innerHTML = "";
-  const workers = d.workers ?? {};
+  const workers  = d.workers ?? {};
   const maxCount = Math.max(1, ...Object.values(workers).map(w => w.pages));
   for (const [rank, info] of Object.entries(workers)) {
     const dead = info.dead ?? false;
-    const pct  = Math.round((info.pages / maxCount) * 100);
+    const pct2 = Math.round((info.pages / maxCount) * 100);
     wg.innerHTML += `
       <div class="worker-card">
         <div class="worker-rank">Rank ${rank}</div>
         <div class="worker-count">${info.pages}</div>
-        <div class="worker-status ${dead ? "status-dead" : "status-active"}">
-          ${dead ? "DEAD" : "active"}
-        </div>
-        <div class="bar-wrap"><div class="bar-fill" style="width:${pct}%"></div></div>
+        <div class="worker-status ${dead?"status-dead":"status-active"}">${dead?"DEAD":"active"}</div>
+        <div class="bar-wrap"><div class="bar-fill" style="width:${pct2}%"></div></div>
       </div>`;
+
+    if (!workerHistory[rank]) workerHistory[rank] = [];
+    workerHistory[rank].push(info.pages);
   }
 
   // log
   if (d.last_event) {
-    const cls = d.last_event.includes("->") ? "assign"
-              : d.last_event.includes("<-") ? "receive"
-              : d.last_event.includes("FAULT") ? "fault" : "";
+    const cls = d.last_event.includes("->")    ? "assign"
+              : d.last_event.includes("<-")    ? "receive"
+              : d.last_event.includes("FAULT") ? "fault"
+              : d.last_event.includes("rate")  ? "rate" : "";
     logs.unshift(`<div class="log-line ${cls}">${d.last_event}</div>`);
-    if (logs.length > maxLog) logs.pop();
+    if (logs.length > 50) logs.pop();
     document.getElementById("log-box").innerHTML = logs.join("");
   }
+
+  // throughput history
+  tpHistory.push({ t: Math.round(d.elapsed ?? 0), p: d.pages_crawled ?? 0 });
+  if (tpHistory.length > 60) tpHistory.shift();
+  updateCharts(workers);
 };
+
+function updateCharts(workers) {
+  // throughput chart
+  const ctx1 = document.getElementById("throughput-chart").getContext("2d");
+  if (tpChart) {
+    tpChart.data.labels   = tpHistory.map(h => h.t + "s");
+    tpChart.data.datasets[0].data = tpHistory.map(h => h.p);
+    tpChart.update("none");
+  } else {
+    tpChart = new Chart(ctx1, {
+      type: "line",
+      data: {
+        labels: tpHistory.map(h => h.t + "s"),
+        datasets: [{ label: "Pages crawled", data: tpHistory.map(h => h.p),
+          borderColor: "#1D9E75", backgroundColor: "rgba(29,158,117,.1)",
+          fill: true, tension: 0.3, pointRadius: 0 }]
+      },
+      options: { responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{x:{grid:{color:"#1a2535"},ticks:{color:"#7a8fa6",maxTicksLimit:8}},
+                y:{grid:{color:"#1a2535"},ticks:{color:"#7a8fa6"},beginAtZero:true}} }
+    });
+  }
+
+  // worker distribution chart
+  const ctx2    = document.getElementById("worker-chart").getContext("2d");
+  const wLabels = Object.keys(workers).map(r => "Rank " + r);
+  const wData   = Object.values(workers).map(w => w.pages);
+  const wColors = Object.values(workers).map(w => w.dead ? "#D85A30" : "#378ADD");
+  if (workerChart) {
+    workerChart.data.labels              = wLabels;
+    workerChart.data.datasets[0].data   = wData;
+    workerChart.data.datasets[0].backgroundColor = wColors;
+    workerChart.update("none");
+  } else {
+    workerChart = new Chart(ctx2, {
+      type: "bar",
+      data: { labels: wLabels, datasets: [{
+        label: "Pages", data: wData,
+        backgroundColor: wColors, borderRadius: 4
+      }]},
+      options: { responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{x:{grid:{color:"#1a2535"},ticks:{color:"#7a8fa6"}},
+                y:{grid:{color:"#1a2535"},ticks:{color:"#7a8fa6"},beginAtZero:true}} }
+    });
+  }
+}
+
+async function loadDomainMetrics() {
+  const resp = await fetch("/api/domain-metrics");
+  const data = await resp.json();
+  const tbody = document.getElementById("domain-tbody");
+
+  if (!Object.keys(data).length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="empty">No data — run a crawl first</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = Object.entries(data)
+    .sort((a,b) => b[1].fetches - a[1].fetches)
+    .map(([domain, s]) => `
+      <tr>
+        <td style="font-weight:500;color:#e8ecf0">${domain}</td>
+        <td><span class="pill pill-blue">${s.fetches}</span></td>
+        <td><span class="pill pill-coral">${s.errors}</span></td>
+        <td><span class="pill pill-amber">${s.blocked}</span></td>
+        <td><span class="pill ${s.error_rate > 10 ? "pill-coral" : "pill-green"}">${s.error_rate}%</span></td>
+        <td><span class="pill pill-blue">${s.p50_ms}ms</span></td>
+        <td><span class="pill pill-amber">${s.p95_ms}ms</span></td>
+        <td><span class="pill pill-coral">${s.p99_ms}ms</span></td>
+      </tr>
+    `).join("");
+}
 
 setInterval(() => {
   document.getElementById("clock").textContent = new Date().toLocaleTimeString();
 }, 1000);
+
+// auto-refresh domain metrics every 30s if on that tab
+setInterval(() => {
+  if (document.getElementById("tab-metrics").classList.contains("active")) {
+    loadDomainMetrics();
+  }
+}, 30000);
 </script>
 </body>
 </html>
