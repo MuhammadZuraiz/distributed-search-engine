@@ -1,0 +1,51 @@
+services:
+
+  # ── search engine ─────────────────────────────────────────────────────────
+  search:
+    build: .
+    command: python search/app.py
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    depends_on:
+      - indexer
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+
+  # ── live dashboard ────────────────────────────────────────────────────────
+  dashboard:
+    build: .
+    command: python search/dashboard.py
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+
+  # ── indexer (runs once then exits) ────────────────────────────────────────
+  indexer:
+    build: .
+    command: mpiexec -n 7 python indexer/run_indexing.py
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: "no"
+
+  # ── crawler (runs once then exits) ────────────────────────────────────────
+  crawler:
+    build: .
+    command: mpiexec -n 7 python master.py
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: "no"

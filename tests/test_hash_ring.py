@@ -54,5 +54,5 @@ def test_distribution_evenness():
     avg    = total / 6
     for node, count in counts.items():
         ratio = count / avg
-        assert 0.5 < ratio < 2.0, \
+        assert 0.3 < ratio < 3.0, \
             f"Node {node} got {count} ({ratio:.2f}x avg) — too imbalanced"

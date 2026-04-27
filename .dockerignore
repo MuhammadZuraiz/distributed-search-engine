@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.git/
+*.egg-info/
+data/crawled_distributed/
+data/search.db
+data/index/
+logs/
+experiments/graphs/
+*.png
+*.pdf
+node_modules/
+.env

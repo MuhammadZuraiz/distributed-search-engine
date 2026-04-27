@@ -2,291 +2,445 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PDC Crawler — Live Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; background: #0f1923; color: #e8ecf0; min-height: 100vh; }
-    header { background: #1f4e79; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; }
-    header h1 { font-size: 17px; font-weight: 600; }
-    .live-dot { width: 9px; height: 9px; background: #1D9E75; border-radius: 50%;
-                display: inline-block; margin-right: 7px; animation: pulse 1.2s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-    .tabs { display: flex; background: #152231; border-bottom: 1px solid #1f3247; }
-    .tab { padding: 11px 24px; font-size: 13px; cursor: pointer; color: #7a8fa6;
-           border-bottom: 2px solid transparent; transition: all .2s; }
-    .tab.active { color: #e8ecf0; border-bottom-color: #2e75b6; }
-    .tab:hover { color: #e8ecf0; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-    .grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; padding: 18px 24px 0; }
-    .card { background: #1a2535; border: 1px solid #2a3a50; border-radius: 8px; padding: 16px 18px; }
-    .card-label { font-size: 10px; color: #7a8fa6; text-transform: uppercase; letter-spacing:.06em; margin-bottom: 8px; }
-    .card-value { font-size: 26px; font-weight: 700; }
-    .card-sub { font-size: 11px; color: #7a8fa6; margin-top: 3px; }
-    .green .card-value { color: #1D9E75; }
-    .blue  .card-value { color: #378ADD; }
-    .amber .card-value { color: #EF9F27; }
-    .coral .card-value { color: #D85A30; }
-    .section { padding: 18px 24px; }
-    .section-title { font-size: 12px; color: #7a8fa6; text-transform: uppercase;
-                     letter-spacing:.06em; margin-bottom: 10px; }
-    .worker-grid { display: grid; grid-template-columns: repeat(6,1fr); gap: 8px; }
-    .worker-card { background: #1a2535; border: 1px solid #2a3a50; border-radius: 7px; padding: 10px 12px; }
-    .worker-rank { font-size: 10px; color: #7a8fa6; margin-bottom: 5px; }
-    .worker-count { font-size: 18px; font-weight: 700; color: #378ADD; }
-    .worker-status { font-size: 10px; margin-top: 3px; }
-    .status-active { color: #1D9E75; }
-    .status-dead   { color: #D85A30; }
-    .bar-wrap { background: #0f1923; border-radius: 3px; height: 5px; margin-top: 7px; overflow: hidden; }
-    .bar-fill { height: 100%; background: #378ADD; border-radius: 3px; transition: width .5s; }
-    .log-box { background: #0a1520; border: 1px solid #1f3247; border-radius: 7px;
-               padding: 12px 14px; font-family: monospace; font-size: 11px; color: #7a8fa6;
-               height: 150px; overflow-y: auto; margin: 0 24px 18px; }
-    .log-line.assign  { color: #378ADD; }
-    .log-line.receive { color: #1D9E75; }
-    .log-line.fault   { color: #D85A30; }
-    .log-line.rate    { color: #EF9F27; }
-    .progress-wrap { margin: 0 24px 14px; }
-    .progress-bar { background: #1a2535; border-radius: 5px; height: 10px; overflow: hidden; }
-    .progress-fill { height: 100%; background: linear-gradient(90deg,#1D9E75,#378ADD);
-                     transition: width .5s; border-radius: 5px; }
-    .progress-label { font-size: 11px; color: #7a8fa6; margin-bottom: 5px;
-                      display: flex; justify-content: space-between; }
-    .chart-wrap { background: #1a2535; border: 1px solid #2a3a50; border-radius: 8px;
-                  padding: 16px; margin: 0 24px 18px; height: 200px; position: relative; }
-    .domain-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    .domain-table th { background: #1f3247; color: #7a8fa6; padding: 8px 12px;
-                       text-align: left; font-weight: 500; font-size: 11px; }
-    .domain-table td { padding: 9px 12px; border-bottom: 1px solid #1a2535; }
-    .domain-table tr:hover td { background: #152231; }
-    .pill { display: inline-block; padding: 2px 7px; border-radius: 8px; font-size: 10px; font-weight: 600; }
-    .pill-blue  { background: #0c2a44; color: #378ADD; }
-    .pill-green { background: #042c1e; color: #1D9E75; }
-    .pill-amber { background: #2a1800; color: #EF9F27; }
-    .pill-coral { background: #2a0a00; color: #D85A30; }
-    .empty { color: #3a4a5a; font-size: 12px; text-align: center; padding: 20px; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#0f1923; --bg2:#1a2535; --bg3:#152231;
+      --fg:#e8ecf0; --fg2:#7a8fa6; --fg3:#4a5a6a;
+      --accent:#8B5CF6; --secondary:#F472B6; --tertiary:#FBBF24;
+      --quaternary:#34D399; --border:#1f3247; --card:#1a2535;
+      --shadow:4px 4px 0px #0a1015;
+      --font-head:'Outfit',system-ui,sans-serif;
+      --font-body:'Plus Jakarta Sans',system-ui,sans-serif;
+      --bounce:cubic-bezier(0.34,1.56,0.64,1);
+    }
+    body { font-family:var(--font-body); background:var(--bg); color:var(--fg); min-height:100vh; overflow-x:hidden; }
+
+    /* dot grid */
+    body::before {
+      content:''; position:fixed; inset:0;
+      background-image:radial-gradient(circle,rgba(255,255,255,.04) 1px,transparent 1px);
+      background-size:24px 24px; pointer-events:none; z-index:0;
+    }
+
+    /* header */
+    header {
+      position:relative; z-index:10; padding:16px 28px;
+      display:flex; align-items:center; justify-content:space-between;
+      background:var(--bg2); border-bottom:2px solid var(--border);
+      box-shadow:0 4px 0 rgba(0,0,0,.4);
+    }
+    .logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+    .logo-icon {
+      width:34px; height:34px; background:var(--accent);
+      border-radius:10px; border:2px solid rgba(255,255,255,.15);
+      display:flex; align-items:center; justify-content:center; font-size:17px;
+    }
+    .logo-text { font-family:var(--font-head); font-weight:800; font-size:17px; color:var(--fg); }
+    .logo-text span { color:var(--accent); }
+
+    .live-badge {
+      display:flex; align-items:center; gap:8px;
+      background:rgba(52,211,153,.15); border:2px solid var(--quaternary);
+      border-radius:999px; padding:5px 14px;
+      font-size:12px; font-weight:700; color:var(--quaternary);
+    }
+    .live-dot { width:7px; height:7px; background:var(--quaternary); border-radius:50%; animation:pulse 1.2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.2} }
+
+    .clock { font-size:13px; color:var(--fg2); font-family:var(--font-head); font-weight:700; }
+
+    /* tabs */
+    .tabs {
+      position:relative; z-index:9;
+      display:flex; background:var(--bg3);
+      border-bottom:2px solid var(--border);
+    }
+    .tab {
+      padding:12px 24px; font-size:13px; font-weight:700;
+      cursor:pointer; color:var(--fg2); border-bottom:3px solid transparent;
+      transition:all .2s; font-family:var(--font-head);
+      letter-spacing:.02em;
+    }
+    .tab.active { color:var(--fg); border-bottom-color:var(--accent); }
+    .tab:hover:not(.active) { color:var(--fg); background:rgba(255,255,255,.03); }
+
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+
+    /* stat cards */
+    .stat-grid {
+      display:grid; grid-template-columns:repeat(4,1fr); gap:14px;
+      padding:20px 24px 0; position:relative; z-index:5;
+    }
+    .stat-card {
+      background:var(--card); border:2px solid var(--border);
+      border-radius:14px; padding:18px 20px; position:relative; overflow:hidden;
+      transition:all .25s var(--bounce);
+    }
+    .stat-card:hover { border-color:var(--accent); transform:translate(-2px,-2px); }
+    .stat-card::after {
+      content:''; position:absolute; bottom:-15px; right:-15px;
+      width:70px; height:70px; border-radius:50%; opacity:.08;
+    }
+    .stat-card:nth-child(1)::after { background:var(--quaternary); }
+    .stat-card:nth-child(2)::after { background:var(--accent); }
+    .stat-card:nth-child(3)::after { background:var(--tertiary); }
+    .stat-card:nth-child(4)::after { background:var(--secondary); }
+
+    .stat-label { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--fg2); margin-bottom:10px; }
+    .stat-val { font-family:var(--font-head); font-size:2.2rem; font-weight:800; line-height:1; }
+    .stat-val.green  { color:var(--quaternary); }
+    .stat-val.violet { color:var(--accent); }
+    .stat-val.amber  { color:var(--tertiary); }
+    .stat-val.coral  { color:var(--secondary); }
+    .stat-sub { font-size:11px; color:var(--fg2); margin-top:6px; }
+
+    /* progress */
+    .progress-section { padding:16px 24px 0; position:relative; z-index:5; }
+    .progress-label { display:flex; justify-content:space-between; font-size:12px; font-weight:700; color:var(--fg2); margin-bottom:8px; }
+    .progress-label span:last-child { color:var(--accent); font-size:14px; }
+    .progress-track {
+      background:var(--bg3); border-radius:999px; height:14px;
+      border:2px solid var(--border); overflow:hidden;
+    }
+    .progress-fill {
+      height:100%; border-radius:999px;
+      background:linear-gradient(90deg, var(--quaternary), var(--accent));
+      transition:width .8s var(--bounce);
+    }
+
+    /* content */
+    .content { padding:20px 24px 40px; position:relative; z-index:5; }
+
+    /* worker grid */
+    .section-label {
+      font-family:var(--font-head); font-weight:800; font-size:13px;
+      color:var(--fg2); text-transform:uppercase; letter-spacing:.07em;
+      margin-bottom:12px; display:flex; align-items:center; gap:8px;
+    }
+    .section-label .dot { width:8px; height:8px; border-radius:50%; }
+
+    .worker-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; margin-bottom:20px; }
+    .worker-card {
+      background:var(--card); border:2px solid var(--border);
+      border-radius:12px; padding:14px 12px; text-align:center;
+      transition:all .2s var(--bounce);
+    }
+    .worker-card:hover { border-color:var(--accent); transform:translate(-2px,-2px); }
+    .worker-card.dead { border-color:var(--secondary); opacity:.7; }
+    .worker-rank { font-size:10px; color:var(--fg2); font-weight:700; text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px; }
+    .worker-count { font-family:var(--font-head); font-size:1.7rem; font-weight:800; color:var(--accent); line-height:1; }
+    .worker-card.dead .worker-count { color:var(--secondary); }
+    .worker-status { font-size:10px; margin-top:6px; font-weight:700; }
+    .status-active { color:var(--quaternary); }
+    .status-dead   { color:var(--secondary); }
+    .worker-bar-wrap { background:var(--bg); border-radius:999px; height:4px; margin-top:8px; overflow:hidden; }
+    .worker-bar { height:100%; background:var(--accent); border-radius:999px; transition:width .5s var(--bounce); }
+    .worker-card.dead .worker-bar { background:var(--secondary); }
+
+    /* log box */
+    .log-box {
+      background:var(--bg); border:2px solid var(--border);
+      border-radius:12px; padding:14px 16px;
+      font-family:monospace; font-size:11px; color:var(--fg2);
+      height:160px; overflow-y:auto; margin-bottom:20px;
+      line-height:1.6;
+    }
+    .log-box::-webkit-scrollbar { width:4px; }
+    .log-box::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
+    .log-line { margin-bottom:2px; padding:2px 0; }
+    .log-line.assign  { color:#60a5fa; }
+    .log-line.receive { color:var(--quaternary); }
+    .log-line.fault   { color:var(--secondary); }
+    .log-line.rate    { color:var(--tertiary); }
+    .log-line.gossip  { color:var(--accent); }
+    .log-line.check   { color:#86efac; }
+
+    /* charts */
+    .chart-panel {
+      background:var(--card); border:2px solid var(--border);
+      border-radius:14px; padding:18px 20px; margin-bottom:16px;
+    }
+    .chart-panel-title { font-family:var(--font-head); font-weight:800; font-size:13px; color:var(--fg2); margin-bottom:14px; }
+    .chart-wrap { height:200px; position:relative; }
+
+    /* domain table */
+    .domain-table { width:100%; border-collapse:collapse; font-size:12px; }
+    .domain-table th {
+      background:var(--bg3); color:var(--fg2); padding:8px 12px;
+      text-align:left; font-weight:700; font-size:10px;
+      text-transform:uppercase; letter-spacing:.06em;
+    }
+    .domain-table td { padding:9px 12px; border-bottom:1px solid var(--border); }
+    .domain-table tr:hover td { background:rgba(139,92,246,.06); }
+
+    .pill {
+      display:inline-block; padding:2px 8px; border-radius:999px;
+      font-size:10px; font-weight:700; border:1px solid rgba(255,255,255,.1);
+    }
+    .pill-violet { background:rgba(139,92,246,.2); color:var(--accent); }
+    .pill-green  { background:rgba(52,211,153,.2); color:var(--quaternary); }
+    .pill-amber  { background:rgba(251,191,36,.2);  color:var(--tertiary); }
+    .pill-coral  { background:rgba(244,114,182,.2); color:var(--secondary); }
+    .pill-muted  { background:rgba(255,255,255,.06); color:var(--fg2); }
+
+    .empty-msg { color:var(--fg3); font-size:12px; text-align:center; padding:24px; }
+
+    /* two col */
+    .two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+
+    @media(max-width:900px) {
+      .stat-grid { grid-template-columns:1fr 1fr; }
+      .worker-grid { grid-template-columns:repeat(3,1fr); }
+      .two-col { grid-template-columns:1fr; }
+    }
+    @media(max-width:600px) {
+      .stat-grid { grid-template-columns:1fr 1fr; }
+      .worker-grid { grid-template-columns:repeat(2,1fr); }
+      header,  .content, .stat-grid, .progress-section { padding-left:16px; padding-right:16px; }
+    }
   </style>
 </head>
 <body>
 
 <header>
-  <h1><span class="live-dot"></span>PDC Distributed Crawler — Live Dashboard</h1>
-  <span id="clock" style="font-size:12px;color:#7a8fa6"></span>
+  <a href="/" class="logo">
+    <div class="logo-icon">🕷️</div>
+    <span class="logo-text">PDC<span>Crawler</span></span>
+  </a>
+  <div class="live-badge">
+    <span class="live-dot"></span>
+    Live Dashboard
+  </div>
+  <span class="clock" id="clock">--:--:--</span>
 </header>
 
 <div class="tabs">
-  <div class="tab active" onclick="switchTab('crawl')">Live crawl</div>
-  <div class="tab" onclick="switchTab('metrics')">Domain metrics</div>
-  <div class="tab" onclick="switchTab('throughput')">Throughput</div>
+  <div class="tab active" onclick="switchTab('crawl')">⚡ Live crawl</div>
+  <div class="tab" onclick="switchTab('metrics')">📊 Domain metrics</div>
+  <div class="tab" onclick="switchTab('throughput')">📈 Throughput</div>
 </div>
 
 <!-- TAB 1: Live crawl -->
 <div id="tab-crawl" class="tab-content active">
 
-  <div class="grid">
-    <div class="card green">
-      <div class="card-label">Pages crawled</div>
-      <div class="card-value" id="pages">0</div>
-      <div class="card-sub" id="target">of 1000 target</div>
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-label">Pages crawled</div>
+      <div class="stat-val green" id="pages">0</div>
+      <div class="stat-sub" id="target">of 1000 target</div>
     </div>
-    <div class="card blue">
-      <div class="card-label">Pages / second</div>
-      <div class="card-value" id="pps">0.00</div>
-      <div class="card-sub">throughput</div>
+    <div class="stat-card">
+      <div class="stat-label">Pages / second</div>
+      <div class="stat-val violet" id="pps">0.00</div>
+      <div class="stat-sub">live throughput</div>
     </div>
-    <div class="card amber">
-      <div class="card-label">Queue size</div>
-      <div class="card-value" id="queue">0</div>
-      <div class="card-sub">URLs pending</div>
+    <div class="stat-card">
+      <div class="stat-label">Queue size</div>
+      <div class="stat-val amber" id="queue">0</div>
+      <div class="stat-sub">URLs pending</div>
     </div>
-    <div class="card coral">
-      <div class="card-label">Elapsed</div>
-      <div class="card-value" id="elapsed">0s</div>
-      <div class="card-sub" id="eta">ETA: —</div>
+    <div class="stat-card">
+      <div class="stat-label">Elapsed</div>
+      <div class="stat-val coral" id="elapsed">0s</div>
+      <div class="stat-sub" id="eta">ETA: calculating…</div>
     </div>
   </div>
 
-  <div class="progress-wrap" style="margin-top:14px">
+  <div class="progress-section" style="margin-top:16px">
     <div class="progress-label">
-      <span>Crawl progress</span><span id="pct">0%</span>
+      <span>Crawl progress</span>
+      <span id="pct">0%</span>
     </div>
-    <div class="progress-bar">
+    <div class="progress-track">
       <div class="progress-fill" id="prog-fill" style="width:0%"></div>
     </div>
   </div>
 
-  <div class="section">
-    <div class="section-title">Worker status</div>
+  <div class="content">
+    <div class="section-label">
+      <span class="dot" style="background:var(--accent)"></span>
+      Worker status
+    </div>
     <div class="worker-grid" id="worker-grid"></div>
-  </div>
 
-  <div class="section" style="padding-bottom:8px">
-    <div class="section-title">Activity log</div>
+    <div class="section-label">
+      <span class="dot" style="background:var(--quaternary)"></span>
+      Activity log
+    </div>
+    <div class="log-box" id="log-box"></div>
   </div>
-  <div class="log-box" id="log-box"></div>
-
 </div>
 
 <!-- TAB 2: Domain metrics -->
 <div id="tab-metrics" class="tab-content">
-  <div class="section">
-    <div class="section-title">Per-domain fetch performance (from logs/metrics.jsonl)</div>
-    <div style="background:#1a2535;border:1px solid #2a3a50;border-radius:8px;overflow:hidden;margin-top:4px">
+  <div class="content">
+    <div class="section-label" style="margin-bottom:16px">
+      <span class="dot" style="background:var(--tertiary)"></span>
+      Per-domain fetch performance — from logs/metrics.jsonl
+    </div>
+    <div class="chart-panel" style="padding:0;overflow:hidden">
       <table class="domain-table">
         <thead>
           <tr>
-            <th>Domain</th>
-            <th>Fetches</th>
-            <th>Errors</th>
-            <th>Blocked</th>
-            <th>Error rate</th>
-            <th>p50 latency</th>
-            <th>p95 latency</th>
-            <th>p99 latency</th>
+            <th>Domain</th><th>Fetches</th><th>Errors</th>
+            <th>Blocked</th><th>Error rate</th>
+            <th>p50</th><th>p95</th><th>p99</th>
           </tr>
         </thead>
         <tbody id="domain-tbody">
-          <tr><td colspan="8" class="empty">Loading...</td></tr>
+          <tr><td colspan="8" class="empty-msg">Click "Domain metrics" tab to load data</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 </div>
 
-<!-- TAB 3: Throughput chart -->
+<!-- TAB 3: Throughput -->
 <div id="tab-throughput" class="tab-content">
-  <div class="section">
-    <div class="section-title">Pages crawled over time</div>
-    <div class="chart-wrap">
-      <canvas id="throughput-chart"></canvas>
-    </div>
-  </div>
-  <div class="section">
-    <div class="section-title">Worker page distribution</div>
-    <div class="chart-wrap">
-      <canvas id="worker-chart"></canvas>
+  <div class="content">
+    <div class="two-col">
+      <div class="chart-panel">
+        <div class="chart-panel-title">Pages crawled over time</div>
+        <div class="chart-wrap"><canvas id="throughput-chart"></canvas></div>
+      </div>
+      <div class="chart-panel">
+        <div class="chart-panel-title">Worker page distribution</div>
+        <div class="chart-wrap"><canvas id="worker-chart"></canvas></div>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
-let logs           = [];
-let tpChart        = null;
-let workerChart    = null;
-let tpHistory      = [];
-let workerHistory  = {};
+let logs        = [];
+let tpChart     = null;
+let workerChart = null;
+let tpHistory   = [];
+
+const CHART_DEFAULTS = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { display: false } },
+};
+const GRID_COLOR = 'rgba(255,255,255,0.04)';
+const TICK_COLOR = '#4a5a6a';
 
 function switchTab(name) {
-  document.querySelectorAll(".tab").forEach((t,i) => {
-    t.classList.toggle("active", ["crawl","metrics","throughput"][i] === name);
-  });
+  document.querySelectorAll(".tab").forEach((t, i) =>
+    t.classList.toggle("active", ["crawl","metrics","throughput"][i] === name)
+  );
   document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
   document.getElementById("tab-" + name).classList.add("active");
   if (name === "metrics") loadDomainMetrics();
 }
 
-const src = new EventSource("/stream");
-src.onmessage = e => {
+// SSE
+const evtSrc = new EventSource("/stream");
+evtSrc.onmessage = e => {
   const d = JSON.parse(e.data);
 
-  document.getElementById("pages").textContent   = d.pages_crawled ?? 0;
+  document.getElementById("pages").textContent   = (d.pages_crawled ?? 0).toLocaleString();
   document.getElementById("pps").textContent     = (d.pages_per_sec ?? 0).toFixed(2);
-  document.getElementById("queue").textContent   = d.queue_size ?? 0;
+  document.getElementById("queue").textContent   = (d.queue_size ?? 0).toLocaleString();
   document.getElementById("elapsed").textContent = Math.round(d.elapsed ?? 0) + "s";
 
   const max = d.max_pages ?? 1000;
   const pct = Math.min(100, Math.round((d.pages_crawled / max) * 100));
   document.getElementById("pct").textContent       = pct + "%";
   document.getElementById("prog-fill").style.width = pct + "%";
-  document.getElementById("target").textContent    = "of " + max + " target";
+  document.getElementById("target").textContent    = "of " + max.toLocaleString() + " target";
 
   const pps = d.pages_per_sec ?? 0;
   const rem = max - (d.pages_crawled ?? 0);
   const eta = pps > 0 ? Math.round(rem / pps) : null;
-  document.getElementById("eta").textContent = eta ? "ETA: ~" + eta + "s" : "ETA: —";
+  document.getElementById("eta").textContent = eta ? "ETA: ~" + eta + "s" : "ETA: calculating…";
 
   // workers
-  const wg = document.getElementById("worker-grid");
-  wg.innerHTML = "";
-  const workers  = d.workers ?? {};
+  const wg      = document.getElementById("worker-grid");
+  const workers = d.workers ?? {};
   const maxCount = Math.max(1, ...Object.values(workers).map(w => w.pages));
-  for (const [rank, info] of Object.entries(workers)) {
+  wg.innerHTML = Object.entries(workers).map(([rank, info]) => {
     const dead = info.dead ?? false;
     const pct2 = Math.round((info.pages / maxCount) * 100);
-    wg.innerHTML += `
-      <div class="worker-card">
+    return `
+      <div class="worker-card ${dead ? 'dead' : ''}">
         <div class="worker-rank">Rank ${rank}</div>
         <div class="worker-count">${info.pages}</div>
-        <div class="worker-status ${dead?"status-dead":"status-active"}">${dead?"DEAD":"active"}</div>
-        <div class="bar-wrap"><div class="bar-fill" style="width:${pct2}%"></div></div>
+        <div class="worker-status ${dead ? 'status-dead' : 'status-active'}">${dead ? '💀 DEAD' : '● active'}</div>
+        <div class="worker-bar-wrap"><div class="worker-bar" style="width:${pct2}%"></div></div>
       </div>`;
-
-    if (!workerHistory[rank]) workerHistory[rank] = [];
-    workerHistory[rank].push(info.pages);
-  }
+  }).join("");
 
   // log
   if (d.last_event) {
-    const cls = d.last_event.includes("->")    ? "assign"
-              : d.last_event.includes("<-")    ? "receive"
-              : d.last_event.includes("FAULT") ? "fault"
-              : d.last_event.includes("rate")  ? "rate" : "";
-    logs.unshift(`<div class="log-line ${cls}">${d.last_event}</div>`);
-    if (logs.length > 50) logs.pop();
+    const cls = d.last_event.includes("->")     ? "assign"
+              : d.last_event.includes("<-")     ? "receive"
+              : d.last_event.includes("FAULT")  ? "fault"
+              : d.last_event.includes("rate")   ? "rate"
+              : d.last_event.includes("gossip") ? "gossip"
+              : d.last_event.includes("check")  ? "check" : "";
+    const ts = new Date().toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    logs.unshift(`<div class="log-line ${cls}">[${ts}] ${d.last_event}</div>`);
+    if (logs.length > 60) logs.pop();
     document.getElementById("log-box").innerHTML = logs.join("");
   }
 
   // throughput history
-  tpHistory.push({ t: Math.round(d.elapsed ?? 0), p: d.pages_crawled ?? 0 });
-  if (tpHistory.length > 60) tpHistory.shift();
+  tpHistory.push({t: Math.round(d.elapsed ?? 0), p: d.pages_crawled ?? 0});
+  if (tpHistory.length > 80) tpHistory.shift();
   updateCharts(workers);
 };
 
 function updateCharts(workers) {
-  // throughput chart
   const ctx1 = document.getElementById("throughput-chart").getContext("2d");
+  const labels = tpHistory.map(h => h.t + "s");
+  const data   = tpHistory.map(h => h.p);
+
   if (tpChart) {
-    tpChart.data.labels   = tpHistory.map(h => h.t + "s");
-    tpChart.data.datasets[0].data = tpHistory.map(h => h.p);
+    tpChart.data.labels = labels;
+    tpChart.data.datasets[0].data = data;
     tpChart.update("none");
   } else {
     tpChart = new Chart(ctx1, {
       type: "line",
-      data: {
-        labels: tpHistory.map(h => h.t + "s"),
-        datasets: [{ label: "Pages crawled", data: tpHistory.map(h => h.p),
-          borderColor: "#1D9E75", backgroundColor: "rgba(29,158,117,.1)",
-          fill: true, tension: 0.3, pointRadius: 0 }]
-      },
-      options: { responsive:true, maintainAspectRatio:false,
-        plugins:{legend:{display:false}},
-        scales:{x:{grid:{color:"#1a2535"},ticks:{color:"#7a8fa6",maxTicksLimit:8}},
-                y:{grid:{color:"#1a2535"},ticks:{color:"#7a8fa6"},beginAtZero:true}} }
+      data: { labels, datasets: [{
+        label: "Pages", data,
+        borderColor: "#34D399", backgroundColor: "rgba(52,211,153,.08)",
+        fill: true, tension: 0.35, pointRadius: 0, borderWidth: 2,
+      }]},
+      options: { ...CHART_DEFAULTS, scales: {
+        x: { grid:{color:GRID_COLOR}, ticks:{color:TICK_COLOR, maxTicksLimit:8, font:{family:"'Plus Jakarta Sans'"}} },
+        y: { grid:{color:GRID_COLOR}, ticks:{color:TICK_COLOR, font:{family:"'Plus Jakarta Sans'"}}, beginAtZero:true }
+      }}
     });
   }
 
-  // worker distribution chart
-  const ctx2    = document.getElementById("worker-chart").getContext("2d");
-  const wLabels = Object.keys(workers).map(r => "Rank " + r);
+  const wLabels = Object.keys(workers).map(r => "R" + r);
   const wData   = Object.values(workers).map(w => w.pages);
-  const wColors = Object.values(workers).map(w => w.dead ? "#D85A30" : "#378ADD");
+  const wColors = Object.values(workers).map(w => w.dead ? "#F472B6" : "#8B5CF6");
+
+  const ctx2 = document.getElementById("worker-chart").getContext("2d");
   if (workerChart) {
-    workerChart.data.labels              = wLabels;
-    workerChart.data.datasets[0].data   = wData;
+    workerChart.data.labels = wLabels;
+    workerChart.data.datasets[0].data = wData;
     workerChart.data.datasets[0].backgroundColor = wColors;
     workerChart.update("none");
   } else {
     workerChart = new Chart(ctx2, {
       type: "bar",
-      data: { labels: wLabels, datasets: [{
-        label: "Pages", data: wData,
-        backgroundColor: wColors, borderRadius: 4
+      data: { labels:wLabels, datasets:[{
+        label:"Pages", data:wData, backgroundColor:wColors, borderRadius:8, borderSkipped:false,
       }]},
-      options: { responsive:true, maintainAspectRatio:false,
-        plugins:{legend:{display:false}},
-        scales:{x:{grid:{color:"#1a2535"},ticks:{color:"#7a8fa6"}},
-                y:{grid:{color:"#1a2535"},ticks:{color:"#7a8fa6"},beginAtZero:true}} }
+      options: { ...CHART_DEFAULTS, scales: {
+        x: { grid:{display:false}, ticks:{color:TICK_COLOR, font:{family:"'Plus Jakarta Sans'"}} },
+        y: { grid:{color:GRID_COLOR}, ticks:{color:TICK_COLOR, font:{family:"'Plus Jakarta Sans'"}}, beginAtZero:true }
+      }}
     });
   }
 }
@@ -297,20 +451,21 @@ async function loadDomainMetrics() {
   const tbody = document.getElementById("domain-tbody");
 
   if (!Object.keys(data).length) {
-    tbody.innerHTML = '<tr><td colspan="8" class="empty">No data — run a crawl first</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8" class="empty-msg">No data — run a crawl first.</td></tr>';
     return;
   }
 
+  const domainColors = ["pill-violet","pill-amber","pill-green","pill-coral"];
   tbody.innerHTML = Object.entries(data)
-    .sort((a,b) => b[1].fetches - a[1].fetches)
-    .map(([domain, s]) => `
+    .sort((a, b) => b[1].fetches - a[1].fetches)
+    .map(([domain, s], i) => `
       <tr>
-        <td style="font-weight:500;color:#e8ecf0">${domain}</td>
-        <td><span class="pill pill-blue">${s.fetches}</span></td>
+        <td style="font-family:var(--font-head);font-weight:700;color:var(--fg)">${domain}</td>
+        <td><span class="pill ${domainColors[i%4]}">${s.fetches}</span></td>
         <td><span class="pill pill-coral">${s.errors}</span></td>
         <td><span class="pill pill-amber">${s.blocked}</span></td>
-        <td><span class="pill ${s.error_rate > 10 ? "pill-coral" : "pill-green"}">${s.error_rate}%</span></td>
-        <td><span class="pill pill-blue">${s.p50_ms}ms</span></td>
+        <td><span class="pill ${s.error_rate > 10 ? 'pill-coral' : 'pill-muted'}">${s.error_rate}%</span></td>
+        <td><span class="pill pill-green">${s.p50_ms}ms</span></td>
         <td><span class="pill pill-amber">${s.p95_ms}ms</span></td>
         <td><span class="pill pill-coral">${s.p99_ms}ms</span></td>
       </tr>
@@ -318,14 +473,12 @@ async function loadDomainMetrics() {
 }
 
 setInterval(() => {
-  document.getElementById("clock").textContent = new Date().toLocaleTimeString();
+  document.getElementById("clock").textContent =
+    new Date().toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
 }, 1000);
 
-// auto-refresh domain metrics every 30s if on that tab
 setInterval(() => {
-  if (document.getElementById("tab-metrics").classList.contains("active")) {
-    loadDomainMetrics();
-  }
+  if (document.getElementById("tab-metrics").classList.contains("active")) loadDomainMetrics();
 }, 30000);
 </script>
 </body>

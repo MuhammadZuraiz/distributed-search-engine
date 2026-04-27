@@ -32,6 +32,10 @@ from utils.token_bucket import RateLimiterRegistry
 
 from utils.hash_ring import HashRing
 
+from utils.bloom_filter import DistributedBloomFilter
+
+from utils.gossip import MasterGossipCoordinator
+
 SEED_URLS = [
     "https://books.toscrape.com/",
     "https://quotes.toscrape.com/",
@@ -52,6 +56,9 @@ TAG_HEARTBEAT      = 5
 
 TAG_TOKEN_REQUEST = 6    # worker -> master: "may I fetch this domain?"
 TAG_TOKEN_GRANT   = 7    # master -> worker: "yes" or "wait Xs"
+
+TAG_GOSSIP_REQUEST = 8   # worker -> master: "send me a peer's filter"
+TAG_GOSSIP_REPLY   = 9   # master -> worker: peer's serialised filter bytes
 
 HEARTBEAT_TIMEOUT  = 15
 POLL_INTERVAL      = 0.05
@@ -145,21 +152,28 @@ def run_master(comm):
 
     # ── try to resume from checkpoint ────────────────────────────────────────
     checkpoint = load_checkpoint()
-    # after checkpoint load, make sure OUTPUT_DIR doc_id starts correctly
     if checkpoint:
         frontier, visited, doc_id = checkpoint
+        bloom = DistributedBloomFilter(capacity=500_000,
+                                       false_positive_rate=0.001)
+        # re-populate bloom from visited set
+        for url in visited:
+            bloom.filter.add(url)
         log.info(f"Resuming from checkpoint: {doc_id} pages already crawled, "
                  f"{len(frontier)} URLs in frontier")
     else:
         frontier = []
+        bloom    = DistributedBloomFilter(capacity=500_000,
+                                          false_positive_rate=0.001)
         visited  = set()
         doc_id   = 0
         for url in SEED_URLS:
             norm = normalise_url(url)
             frontier.append((norm, 0))
             visited.add(norm)
+            bloom.filter.add(norm)
         log.info("Starting fresh crawl")
-
+        
     # active_workers starts at 0 always — never restored from checkpoint
     active_workers = 0
     start_time     = time.time()
@@ -178,6 +192,10 @@ def run_master(comm):
     # ── token bucket rate limiter ─────────────────────────────────────────────
     rate_limiter = RateLimiterRegistry()
     log.info("Token bucket rate limiter initialised")
+
+    # ── gossip coordinator ────────────────────────────────────────────────────
+    gossip_coordinator = MasterGossipCoordinator(worker_ranks)
+    log.info("Gossip protocol coordinator initialised")
 
     while True:
 
@@ -237,6 +255,25 @@ def run_master(comm):
             if not granted:
                 log.info(f"  [rate] rank {sender} must wait {wait}s "
                          f"for {domain}")
+                
+        # ── gossip: worker uploads its filter ─────────────────────────────
+        elif tag == TAG_GOSSIP_REQUEST:
+            data = comm.recv(source=sender, tag=TAG_GOSSIP_REQUEST)
+
+            if isinstance(data, bytes):
+                # worker is uploading its filter + requesting a peer's
+                gossip_coordinator.store_filter(sender, data)
+                peer_rank, peer_bytes = \
+                    gossip_coordinator.get_random_peer_filter(sender)
+
+                if peer_bytes:
+                    comm.send((peer_rank, peer_bytes),
+                              dest=sender, tag=TAG_GOSSIP_REPLY)
+                    conv = gossip_coordinator.get_convergence_stats()
+                    log.info(f"  [gossip] rank {sender} <-> rank {peer_rank} "
+                             f"(similarity: {conv['similarity']:.2%})")
+                else:
+                    comm.send((None, None), dest=sender, tag=TAG_GOSSIP_REPLY)
 
         # ── worker ready ──────────────────────────────────────────────────
         elif tag == TAG_READY:
@@ -314,13 +351,14 @@ def run_master(comm):
                 }, worker_rank=sender)
                 log.info(f"  <- received [{result_doc_id}] from rank {sender}: {title[:40]}")
 
+            # ── enqueue new links via Bloom filter ────────────────────────
             if depth < MAX_DEPTH:
                 for link in links:
                     norm = normalise_url(link)
-                    if norm not in visited and is_allowed(norm):
+                    if bloom.check_and_add(norm) and is_allowed(norm):
                         visited.add(norm)
                         if doc_id + len(frontier) < MAX_PAGES * 3:
-                            frontier.append((norm, depth + 1))
+                            frontier.append((norm, depth + 1))            
 
             # ── write_stats call 3: result received ───────────────────────
             write_stats(doc_id, len(frontier), time.time() - start_time,
@@ -344,6 +382,13 @@ def run_master(comm):
     min_w = min((v for r, v in worker_counts.items()
                  if r not in dead_workers), default=1)
     log.info(f"  imbalance ratio: {max_w / min_w:.2f}")
+    bf_stats = bloom.stats()
+    log.info(f"Bloom filter stats:")
+    log.info(f"  URLs inserted  : {bf_stats['inserted']:,}")
+    log.info(f"  Memory used    : {bf_stats['memory_mb']} MB")
+    log.info(f"  Load factor    : {bf_stats['load_factor']:.2%}")
+    log.info(f"  FP rate (est.) : {bf_stats['fp_rate_current']:.4%}")
+    log.info(f"  FP rate (target): {bf_stats['fp_rate_target']:.4%}")
     log.info("-" * 60)
 
     # final stats write so dashboard shows 100%
@@ -354,6 +399,11 @@ def run_master(comm):
     for rank in dead_workers:
         try:
             comm.send(None, dest=rank, tag=TAG_DONE)
+            # also send a dummy gossip reply in case worker is blocked waiting
+            try:
+                comm.send((None, None), dest=rank, tag=TAG_GOSSIP_REPLY)
+            except Exception:
+                pass
         except Exception:
             pass
 

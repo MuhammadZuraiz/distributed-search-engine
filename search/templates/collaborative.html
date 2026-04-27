@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDC — Collaborative Search</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#FFFDF5; --fg:#1E293B; --muted:#F1F5F9; --muted-fg:#64748B;
+      --accent:#8B5CF6; --secondary:#F472B6; --tertiary:#FBBF24;
+      --quaternary:#34D399; --border:#E2E8F0; --card:#FFFFFF;
+      --shadow:4px 4px 0px #1E293B; --shadow-lg:8px 8px 0px #1E293B;
+      --font-head:'Outfit',system-ui,sans-serif;
+      --font-body:'Plus Jakarta Sans',system-ui,sans-serif;
+      --bounce:cubic-bezier(0.34,1.56,0.64,1);
+    }
+    body { font-family:var(--font-body); background:var(--bg); color:var(--fg); min-height:100vh; overflow-x:hidden; }
+    body::before {
+      content:''; position:fixed; inset:0;
+      background-image:radial-gradient(circle,#CBD5E1 1px,transparent 1px);
+      background-size:28px 28px; opacity:.35; pointer-events:none; z-index:0;
+    }
+
+    /* deco */
+    .deco { position:fixed; pointer-events:none; z-index:0; }
+    .deco-1 { width:140px; height:140px; background:var(--tertiary); border-radius:50%; top:-40px; right:10%; opacity:.3; }
+    .deco-2 { width:70px; height:70px; background:var(--secondary); border-radius:50%; bottom:20%; left:2%; opacity:.25; }
+    .deco-3 { width:50px; height:50px; background:var(--quaternary); transform:rotate(20deg); top:40%; right:2%; opacity:.25; }
+
+    /* header */
+    header {
+      position:relative; z-index:10; padding:18px 32px;
+      display:flex; align-items:center; justify-content:space-between;
+      background:var(--card); border-bottom:2px solid var(--fg); box-shadow:0 4px 0 var(--fg);
+    }
+    .logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+    .logo-icon { width:36px; height:36px; background:var(--accent); border-radius:10px; border:2px solid var(--fg); box-shadow:3px 3px 0 var(--fg); display:flex; align-items:center; justify-content:center; font-size:18px; }
+    .logo-text { font-family:var(--font-head); font-weight:800; font-size:18px; color:var(--fg); }
+    .logo-text span { color:var(--accent); }
+    nav a { font-weight:600; font-size:13px; color:var(--fg); text-decoration:none; padding:6px 14px; border:2px solid transparent; border-radius:999px; transition:all .2s var(--bounce); }
+    nav a:hover { background:var(--tertiary); border-color:var(--fg); box-shadow:3px 3px 0 var(--fg); transform:translate(-1px,-1px); }
+
+    .live-indicator {
+      display:flex; align-items:center; gap:8px;
+      background:var(--quaternary); border:2px solid var(--fg);
+      border-radius:999px; padding:6px 16px;
+      font-size:12px; font-weight:700; box-shadow:3px 3px 0 var(--fg);
+    }
+    .live-dot { width:8px; height:8px; background:var(--fg); border-radius:50%; animation:pulse 1.2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* layout */
+    .layout { display:grid; grid-template-columns:1fr 320px; min-height:calc(100vh - 70px); position:relative; z-index:5; }
+
+    /* main panel */
+    .main-panel { padding:28px 28px 40px; border-right:2px solid var(--fg); }
+
+    .page-tag {
+      display:inline-flex; align-items:center; gap:6px;
+      background:var(--accent); color:white;
+      border:2px solid var(--fg); border-radius:999px;
+      padding:4px 14px; font-size:12px; font-weight:700;
+      box-shadow:3px 3px 0 var(--fg); margin-bottom:16px;
+      letter-spacing:.05em; text-transform:uppercase;
+    }
+    .page-title { font-family:var(--font-head); font-size:1.9rem; font-weight:800; margin-bottom:6px; }
+    .page-title span { color:var(--accent); }
+    .page-sub { color:var(--muted-fg); font-size:13px; margin-bottom:24px; line-height:1.6; }
+
+    /* search bar */
+    .search-wrap {
+      display:flex; gap:10px; margin-bottom:16px;
+    }
+    .search-wrap input {
+      flex:1; padding:12px 18px; font-size:14px;
+      font-family:var(--font-body);
+      background:var(--card); border:2px solid var(--fg);
+      border-radius:999px; color:var(--fg); outline:none;
+      box-shadow:var(--shadow); transition:all .2s var(--bounce);
+    }
+    .search-wrap input:focus {
+      box-shadow:4px 4px 0 var(--accent);
+      border-color:var(--accent);
+      transform:translate(-2px,-2px);
+    }
+    .search-btn {
+      padding:12px 24px; background:var(--accent); color:white;
+      font-family:var(--font-head); font-weight:700; font-size:14px;
+      border:2px solid var(--fg); border-radius:999px; cursor:pointer;
+      box-shadow:var(--shadow); transition:all .2s var(--bounce);
+      white-space:nowrap;
+    }
+    .search-btn:hover { transform:translate(-2px,-2px); box-shadow:6px 6px 0 var(--fg); }
+    .search-btn:active { transform:translate(1px,1px); box-shadow:2px 2px 0 var(--fg); }
+
+    .status-bar {
+      font-size:13px; color:var(--muted-fg); margin-bottom:20px;
+      font-weight:500; padding:10px 16px;
+      background:var(--muted); border:2px solid var(--border);
+      border-radius:10px;
+    }
+    .status-bar strong { color:var(--fg); font-weight:700; }
+    .status-bar .users { color:var(--quaternary); font-weight:700; }
+
+    /* result cards */
+    .result {
+      background:var(--card); border:2px solid var(--fg);
+      border-radius:16px; padding:18px 20px; margin-bottom:10px;
+      box-shadow:var(--shadow); cursor:pointer;
+      transition:all .25s var(--bounce); position:relative; overflow:hidden;
+    }
+    .result::before {
+      content:''; position:absolute; top:0; left:0;
+      width:5px; height:100%; background:var(--accent);
+      transition:width .2s var(--bounce);
+    }
+    .result:nth-child(3n)::before   { background:var(--secondary); }
+    .result:nth-child(3n+2)::before { background:var(--quaternary); }
+    .result:hover { transform:translate(-3px,-3px); box-shadow:7px 7px 0 var(--fg); }
+    .result:hover::before { width:8px; }
+
+    .result-title { font-family:var(--font-head); font-size:15px; font-weight:700; color:var(--accent); margin-bottom:3px; }
+    .result-url   { font-size:11px; color:var(--quaternary); font-weight:600; margin-bottom:7px; word-break:break-all; }
+    .result-snippet { font-size:12px; color:var(--muted-fg); line-height:1.6; margin-bottom:8px; }
+    .result-snippet mark { background:var(--tertiary); color:var(--fg); padding:0 3px; border-radius:4px; font-weight:600; }
+
+    .result-meta { display:flex; gap:6px; flex-wrap:wrap; }
+    .tag {
+      font-size:11px; font-weight:700; padding:3px 9px;
+      border-radius:999px; border:2px solid var(--fg); font-family:var(--font-body);
+    }
+    .tag-doc   { background:var(--muted); color:var(--muted-fg); }
+    .tag-score { background:var(--accent); color:white; }
+    .tag-bm25  { background:#EDE9FE; color:var(--accent); }
+    .tag-crowd { background:var(--secondary); color:white; animation:glow .8s infinite alternate; }
+    @keyframes glow { from{box-shadow:0 0 0 0 rgba(244,114,182,.4)} to{box-shadow:0 0 8px 2px rgba(244,114,182,.4)} }
+
+    .empty-state { text-align:center; padding:60px 20px; }
+    .empty-state .icon { font-size:56px; display:block; margin-bottom:12px; }
+    .empty-state h3 { font-family:var(--font-head); font-size:20px; font-weight:800; margin-bottom:6px; }
+    .empty-state p { color:var(--muted-fg); font-size:13px; }
+
+    /* sidebar */
+    .side-panel { padding:24px 20px; background:var(--bg); }
+
+    .side-section { margin-bottom:24px; }
+    .side-title {
+      font-family:var(--font-head); font-weight:800; font-size:13px;
+      margin-bottom:12px; display:flex; align-items:center; gap:8px;
+    }
+    .side-title .pill { width:10px; height:10px; border-radius:50%; border:2px solid var(--fg); }
+
+    /* mini stat cards */
+    .mini-stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
+    .mini-stat {
+      background:var(--card); border:2px solid var(--fg);
+      border-radius:12px; padding:14px 14px;
+      box-shadow:var(--shadow); text-align:center;
+    }
+    .mini-stat-val { font-family:var(--font-head); font-size:1.8rem; font-weight:800; line-height:1; }
+    .mini-stat-val.v { color:var(--accent); }
+    .mini-stat-val.g { color:var(--quaternary); }
+    .mini-stat-label { font-size:10px; color:var(--muted-fg); font-weight:700; text-transform:uppercase; letter-spacing:.05em; margin-top:4px; }
+
+    /* trending items */
+    .trending-item {
+      display:flex; align-items:center; gap:10px;
+      padding:8px 12px; border:2px solid var(--border);
+      border-radius:10px; margin-bottom:6px; cursor:pointer;
+      background:var(--card); transition:all .2s var(--bounce);
+      font-size:13px; font-weight:600;
+    }
+    .trending-item:hover { border-color:var(--fg); transform:translate(-2px,-2px); box-shadow:4px 4px 0 var(--fg); background:var(--tertiary); }
+    .trending-rank { font-family:var(--font-head); font-weight:800; font-size:14px; color:var(--accent); width:18px; }
+    .trending-score { margin-left:auto; }
+
+    .score-badge {
+      font-size:10px; font-weight:700; padding:2px 8px;
+      border-radius:999px; border:2px solid var(--fg); background:var(--secondary); color:white;
+    }
+
+    /* feed */
+    .feed-item {
+      padding:8px 10px; border-left:3px solid var(--border);
+      margin-bottom:6px; font-size:12px; line-height:1.5;
+      border-radius:0 8px 8px 0; background:var(--card);
+      transition:border-color .2s;
+    }
+    .feed-item.search { border-left-color:var(--accent); }
+    .feed-item.click  { border-left-color:var(--quaternary); }
+    .feed-item strong { font-weight:700; }
+    .feed-time { float:right; color:var(--muted-fg); font-size:10px; }
+
+    .no-data { color:var(--muted-fg); font-size:12px; text-align:center; padding:16px 0; }
+
+    @media(max-width:800px) {
+      .layout { grid-template-columns:1fr; }
+      .side-panel { border-top:2px solid var(--fg); }
+      .main-panel { border-right:none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="deco deco-1"></div>
+<div class="deco deco-2"></div>
+<div class="deco deco-3"></div>
+
+<header>
+  <a href="/" class="logo">
+    <div class="logo-icon">🔍</div>
+    <span class="logo-text">PDC<span>Search</span></span>
+  </a>
+  <nav>
+    <a href="/">Search</a>
+    <a href="/analytics">Analytics</a>
+  </nav>
+  <div class="live-indicator">
+    <span class="live-dot"></span>
+    Live collaborative mode
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- main -->
+  <div class="main-panel">
+    <div class="page-tag">⚡ Distributed shared state</div>
+    <h1 class="page-title">Search <span>together</span></h1>
+    <p class="page-sub">Your searches and clicks shape results for everyone in real time. This demonstrates distributed shared mutable state — the same concept used by Amazon DynamoDB and Apache Cassandra.</p>
+
+    <div class="search-wrap">
+      <input type="text" id="search-input"
+        placeholder="Search — your clicks boost results for all users…"
+        onkeydown="if(event.key==='Enter') doSearch()">
+      <button class="search-btn" onclick="doSearch()">Search →</button>
+    </div>
+
+    <div class="status-bar" id="status">
+      Connect to the live feed to see real-time collaborative activity.
+    </div>
+
+    <div id="results-container"></div>
+  </div>
+
+  <!-- sidebar -->
+  <div class="side-panel">
+
+    <div class="mini-stat-grid">
+      <div class="mini-stat">
+        <div class="mini-stat-val v" id="active-users">0</div>
+        <div class="mini-stat-label">Active users</div>
+      </div>
+      <div class="mini-stat">
+        <div class="mini-stat-val g" id="total-queries">0</div>
+        <div class="mini-stat-label">Searches today</div>
+      </div>
+    </div>
+
+    <div class="side-section">
+      <div class="side-title">
+        <div class="pill" style="background:var(--accent)"></div>
+        Trending searches
+      </div>
+      <div id="trending-queries"><p class="no-data">No searches yet</p></div>
+    </div>
+
+    <div class="side-section">
+      <div class="side-title">
+        <div class="pill" style="background:var(--secondary)"></div>
+        Hot documents 🔥
+      </div>
+      <div id="trending-docs"><p class="no-data">No clicks yet</p></div>
+    </div>
+
+    <div class="side-section">
+      <div class="side-title">
+        <div class="pill" style="background:var(--quaternary)"></div>
+        Live activity feed
+      </div>
+      <div id="live-feed"><p class="no-data">Waiting for activity…</p></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const SESSION_ID = "sess_" + Math.random().toString(36).slice(2);
+let currentQuery = "";
+
+function getSessionCookie() {
+  const m = document.cookie.match(/session_id=([^;]+)/);
+  return m ? m[1] : SESSION_ID;
+}
+
+// SSE
+const evtSrc = new EventSource("/collab/stream");
+evtSrc.onmessage = e => {
+  const d = JSON.parse(e.data);
+  document.getElementById("active-users").textContent  = d.stats.active_users;
+  document.getElementById("total-queries").textContent = d.stats.total_queries;
+
+  // trending queries
+  const tq = document.getElementById("trending-queries");
+  if (d.stats.trending_queries && d.stats.trending_queries.length) {
+    tq.innerHTML = d.stats.trending_queries.map((q, i) => `
+      <div class="trending-item" onclick="setQuery('${q}')">
+        <span class="trending-rank">${i+1}</span>
+        <span style="flex:1">${q}</span>
+      </div>
+    `).join("");
+  } else {
+    tq.innerHTML = '<p class="no-data">No searches yet</p>';
+  }
+
+  // trending docs
+  const td = document.getElementById("trending-docs");
+  if (d.trending && d.trending.length) {
+    td.innerHTML = d.trending.map(doc => `
+      <div class="trending-item" onclick="window.open('${doc.url}','_blank')">
+        <span class="trending-rank">🔥</span>
+        <span style="flex:1;font-size:12px">${doc.title.substring(0,32)}</span>
+        <span class="score-badge">${doc.score.toFixed(1)}</span>
+      </div>
+    `).join("");
+  } else {
+    td.innerHTML = '<p class="no-data">No clicks yet</p>';
+  }
+
+  // feed
+  const lf = document.getElementById("live-feed");
+  if (d.feed && d.feed.length) {
+    lf.innerHTML = d.feed.map(ev => {
+      const ago = Math.round(Date.now()/1000 - ev.ts);
+      if (ev.type === "search") {
+        return `<div class="feed-item search">
+          <span class="feed-time">${ago}s ago</span>
+          Searched: <strong>${ev.query}</strong>
+        </div>`;
+      } else {
+        return `<div class="feed-item click">
+          <span class="feed-time">${ago}s ago</span>
+          Clicked doc #${ev.doc_id} for "<strong>${ev.query}</strong>"
+        </div>`;
+      }
+    }).join("");
+  } else {
+    lf.innerHTML = '<p class="no-data">Waiting for activity…</p>';
+  }
+};
+
+async function doSearch() {
+  const q = document.getElementById("search-input").value.trim();
+  if (!q) return;
+  currentQuery = q;
+
+  document.getElementById("status").innerHTML = `Searching <strong>${q}</strong> across all shards…`;
+
+  await fetch("/collab/signal", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({type:"search", query:q})
+  });
+
+  const resp = await fetch(`/collab/search?q=${encodeURIComponent(q)}`);
+  const data = await resp.json();
+
+  document.getElementById("status").innerHTML =
+    `<strong>${data.results.length}</strong> results for "<strong>${q}</strong>" — ` +
+    `<span class="users"><strong>${data.active_users}</strong> user(s)</span> searching now`;
+
+  const c = document.getElementById("results-container");
+  if (!data.results.length) {
+    c.innerHTML = `<div class="empty-state"><span class="icon">🔭</span><h3>No results for "${q}"</h3><p>Try different keywords.</p></div>`;
+    return;
+  }
+
+  c.innerHTML = data.results.map((r, i) => `
+    <div class="result" onclick="trackClick(event, ${r.doc_id}, ${i+1}, '${r.url}')">
+      <div class="result-title">${r.title}</div>
+      <div class="result-url">${r.url}</div>
+      ${r.snippet ? `<div class="result-snippet">${r.snippet}</div>` : ""}
+      <div class="result-meta">
+        <span class="tag tag-score">score ${r.score}</span>
+        ${r.crowd > 0 ? `<span class="tag tag-crowd">crowd +${r.crowd}</span>` : ""}
+        <span class="tag tag-bm25">bm25 ${r.bm25}</span>
+        <span class="tag tag-doc">doc #${r.doc_id}</span>
+      </div>
+    </div>
+  `).join("");
+}
+
+async function trackClick(event, docId, position, url) {
+  event.stopPropagation();
+  await fetch("/collab/signal", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({type:"click", doc_id:docId, query:currentQuery, position})
+  });
+  window.open(url, "_blank");
+}
+
+function setQuery(q) {
+  document.getElementById("search-input").value = q;
+  doSearch();
+}
+</script>
+</body>
+</html>

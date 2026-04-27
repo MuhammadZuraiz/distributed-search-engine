@@ -20,8 +20,13 @@ from utils.metrics import record_fetch
 
 from urllib.parse import urlparse as _urlparse
 
+from utils.gossip import WorkerGossipState, GOSSIP_INTERVAL
+
 TAG_TOKEN_REQUEST = 6
 TAG_TOKEN_GRANT   = 7
+
+TAG_GOSSIP_REQUEST = 8
+TAG_GOSSIP_REPLY   = 9
 
 TAG_READY      = 1
 TAG_TASK       = 2
@@ -71,8 +76,9 @@ def request_token(comm, url):
         time.sleep(wait + 0.05)
 
 def run_worker(comm):
-    rank = comm.Get_rank()
-    log.info(f"Worker rank {rank} ready")
+    rank         = comm.Get_rank()
+    gossip_state = WorkerGossipState(rank)
+    log.info(f"Worker rank {rank} ready (gossip interval: every {GOSSIP_INTERVAL} URLs)")
 
     while True:
         comm.send("READY", dest=0, tag=TAG_READY)
@@ -83,7 +89,11 @@ def run_worker(comm):
 
         if incoming_tag == TAG_DONE:
             comm.recv(source=0, tag=TAG_DONE)
-            log.info(f"Worker rank {rank} shutting down")
+            stats = gossip_state.stats()
+            log.info(f"Worker rank {rank} shutting down -- "
+                     f"gossip rounds: {stats['gossip_rounds']}, "
+                     f"merges: {stats['merges_done']}, "
+                     f"filter load: {stats['filter_load_factor']:.2%}")
             break
 
         url, depth, doc_id = comm.recv(source=0, tag=TAG_TASK)
@@ -130,9 +140,44 @@ def run_worker(comm):
             continue
 
         title, text, snippet, links = parse_page(html, final_url)
+
+        # ── update local gossip filter ────────────────────────────────────
+        gossip_state.add_url(url)
+        for link in links[:50]:   # sample links to avoid overloading filter
+            gossip_state.local_bloom.add(link)
+
+        # ── gossip round ──────────────────────────────────────────────────
+        if gossip_state.should_gossip():
+            new_bits = do_gossip(comm, gossip_state)
+            if new_bits > 0:
+                log.info(f"  [gossip] rank {rank} learned {new_bits} "
+                         f"new URL bits from peer")
+
         record_fetch(domain, duration_ms, status="ok")
         comm.send((doc_id, final_url, title, text, snippet, links, depth),
                   dest=0, tag=TAG_RESULT)
+
+def do_gossip(comm, gossip_state):
+    """Send our filter to master, receive a peer's, merge it."""
+    try:
+        my_bytes = gossip_state.get_filter_bytes()
+        comm.send(my_bytes, dest=0, tag=TAG_GOSSIP_REQUEST)
+
+        # use a short timeout probe before blocking recv
+        status    = MPI.Status()
+        deadline  = time.time() + 3.0   # wait max 3 seconds
+        while time.time() < deadline:
+            if comm.iprobe(source=0, tag=TAG_GOSSIP_REPLY, status=status):
+                peer_rank, peer_bytes = comm.recv(source=0, tag=TAG_GOSSIP_REPLY)
+                if peer_bytes is not None:
+                    new_bits = gossip_state.merge_peer_filter(peer_bytes, peer_rank)
+                    gossip_state.gossip_count += 1
+                    return new_bits
+                return 0
+            time.sleep(0.05)
+    except Exception as e:
+        log.warning(f"Gossip failed for rank {gossip_state.rank}: {e}")
+    return 0
 
 if __name__ == "__main__":
     comm = MPI.COMM_WORLD

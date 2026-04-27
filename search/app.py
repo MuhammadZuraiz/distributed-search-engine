@@ -7,11 +7,12 @@ import os
 import json
 import re
 import math
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, render_template, jsonify, Response
 from search.bm25 import BM25
 from trie import build_trie
 
@@ -25,6 +26,10 @@ from utils.metrics import get_domain_stats
 from spell import SpellCorrector
 
 from expander import QueryExpander
+
+from collaborative import SHARED_MODEL
+
+import uuid
 
 INDEX_PATH   = "data/index/inverted_index.json"
 URL_MAP_PATH = "data/index/url_map.json"
@@ -149,12 +154,19 @@ def blended_search(query, expanded_query=None, top_n=20):
     blended.sort(key=lambda x: x["score"], reverse=True)
     return blended[:top_n]
 
+def get_session_id():
+    """Get or create a persistent session ID from cookie."""
+    sid = request.cookies.get("session_id")
+    if not sid:
+        sid = str(uuid.uuid4())[:8]
+    return sid
+
 # ── routes ────────────────────────────────────────────────────────────────────
 
 @app.route("/", methods=["GET"])
 def index():
     query      = request.args.get("q", "").strip()
-    session_id = request.cookies.get("session_id", "")
+    session_id = get_session_id()
 
     # spell correction
     corrected_query   = None
@@ -257,7 +269,7 @@ def track_click():
     query      = data.get("query", "")
     doc_id     = data.get("doc_id")
     position   = data.get("position", 0)
-    session_id = request.cookies.get("session_id", "")
+    session_id = get_session_id()
     if query and doc_id is not None:
         log_click(query, doc_id, position, session_id)
     return jsonify({"ok": True})
@@ -350,6 +362,139 @@ def api_analytics():
         "hourly_volume":       [dict(r) for r in hourly],
     })
 
+@app.route("/api/federated")
+def api_federated():
+    """
+    Federated search — searches index shards independently
+    and merges results. Demonstrates distributed query execution.
+    For demo purposes runs shards sequentially in-process.
+    Full MPI version: mpiexec -n 7 python search/federated.py
+    """
+    from search.federated import (shard_index, ShardSearcher,
+                                  FederatedSearchCoordinator)
+    import json
+
+    query = request.args.get("q", "").strip()
+    n_shards = int(request.args.get("shards", 3))
+
+    if not query:
+        return jsonify({"error": "q parameter required"})
+
+    terms   = [t.lower() for t in query.split() if len(t) >= 3]
+    t_start = time.time()
+
+    shards    = shard_index(INDEX, n_shards)
+    searchers = [ShardSearcher(s, i, PAGERANK)
+                 for i, s in enumerate(shards)]
+
+    shard_results  = []
+    shard_latencies = []
+    for i, searcher in enumerate(searchers):
+        t0      = time.time()
+        results = searcher.search(terms, top_k=10)
+        shard_latencies.append(round((time.time() - t0) * 1000, 2))
+        shard_results.append(results)
+
+    coordinator = FederatedSearchCoordinator(URL_MAP)
+    merged      = coordinator.merge_shard_results(shard_results)
+    total_ms    = round((time.time() - t_start) * 1000, 2)
+
+    return jsonify({
+        "query":           query,
+        "n_shards":        n_shards,
+        "total_ms":        total_ms,
+        "shard_latencies": shard_latencies,
+        "shard_sizes":     [len(s) for s in shards],
+        "results":         merged[:10],
+    })
+
+@app.route("/collaborative")
+def collaborative_search():
+    return render_template("collaborative.html")
+
+
+@app.route("/collab/signal", methods=["POST"])
+def collab_signal():
+    """Receive search signals from any user and update shared model."""
+    data       = request.get_json()
+    session_id = get_session_id()
+    signal_type = data.get("type")
+
+    if signal_type == "search":
+        SHARED_MODEL.record_query(data.get("query", ""), session_id)
+
+    elif signal_type == "click":
+        SHARED_MODEL.record_click(
+            doc_id    = data.get("doc_id"),
+            query     = data.get("query", ""),
+            position  = data.get("position", 10),
+            session_id = session_id
+        )
+
+    return jsonify({"ok": True,
+                    "active_users": SHARED_MODEL.get_active_user_count()})
+
+
+@app.route("/collab/stream")
+def collab_stream():
+    """SSE stream pushing live collaborative activity to all connected users."""
+    def event_generator():
+        last_sent = 0
+        while True:
+            now = time.time()
+            if now - last_sent >= 1.5:
+                stats    = SHARED_MODEL.get_stats()
+                trending = SHARED_MODEL.get_trending_docs(URL_MAP, limit=5)
+                feed     = SHARED_MODEL.get_live_feed(limit=10)
+                payload  = json.dumps({
+                    "stats":    stats,
+                    "trending": trending,
+                    "feed":     feed,
+                })
+                yield f"data: {payload}\n\n"
+                last_sent = now
+            time.sleep(0.5)
+
+    return Response(event_generator(), mimetype="text/event-stream")
+
+@app.route("/collab/search")
+def collab_search_api():
+    query      = request.args.get("q", "").strip()
+    session_id = get_session_id()
+
+    if not query:
+        return jsonify({"results": [], "query": ""})
+
+    results = blended_search(query)
+
+    for r in results:
+        crowd_boost = SHARED_MODEL.get_crowd_boost(r["doc_id"])
+        r["crowd"]  = round(crowd_boost, 3)
+        r["score"]  = round(r["score"] + crowd_boost * 0.1, 3)
+
+    results.sort(key=lambda x: x["score"], reverse=True)
+    for r in results:
+        r["snippet"] = highlight(r.get("snippet", ""), query)
+
+    resp = jsonify({
+        "query":        query,
+        "results":      results[:20],
+        "active_users": SHARED_MODEL.get_active_user_count(),
+        "trending":     [q for q, _ in SHARED_MODEL.get_trending_queries(5)],
+    })
+    resp.set_cookie("session_id", session_id,
+                    max_age=3600, samesite="Lax")
+    return resp
+
+@app.route("/api/log-analysis")
+def api_log_analysis():
+    """Returns results of MapReduce log analysis jobs."""
+    path = "data/index/log_analysis.json"
+    if not os.path.exists(path):
+        return jsonify({"error": "Run experiments/log_mapreduce.py first"})
+    with open(path, encoding="utf-8") as f:
+        return jsonify(json.load(f))
+
 if __name__ == "__main__":
     print("Search engine running at http://localhost:5000")
-    app.run(debug=False, port=5000)
+    app.run(debug=False, port=5000, host="0.0.0.0")
