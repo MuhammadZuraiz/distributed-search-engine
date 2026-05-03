@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDC Search Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #FFFDF5;
+      --fg:         #1E293B;
+      --muted:      #F1F5F9;
+      --muted-fg:   #64748B;
+      --accent:     #8B5CF6;
+      --secondary:  #F472B6;
+      --tertiary:   #FBBF24;
+      --quaternary: #34D399;
+      --border:     #E2E8F0;
+      --card:       #FFFFFF;
+      --shadow:     4px 4px 0px #1E293B;
+      --shadow-lg:  8px 8px 0px #1E293B;
+      --font-head:  'Outfit', system-ui, sans-serif;
+      --font-body:  'Plus Jakarta Sans', system-ui, sans-serif;
+      --bounce:     cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    html {
+      overflow-x: hidden;
+    }
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--fg);
+      min-height: 100vh;
+      overflow-x: hidden;
+      width: 100%;
+    }
+
+    /* ── dot grid background ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle, #CBD5E1 1px, transparent 1px);
+      background-size: 28px 28px;
+      opacity: 0.45;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .deco {
+      position: fixed;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .deco-circle-1 {
+      width: 180px; height: 180px;
+      background: var(--tertiary);
+      border-radius: 50%;
+      top: -90px; right: -20px;
+      opacity: 0.35;
+    }
+    .deco-circle-2 {
+      width: 90px; height: 90px;
+      background: var(--secondary);
+      border-radius: 50%;
+      bottom: 15%; left: -20px;
+      opacity: 0.3;
+    }
+    .deco-square {
+      width: 60px; height: 60px;
+      background: var(--quaternary);
+      transform: rotate(25deg);
+      bottom: 30%; right: -10px;
+      opacity: 0.3;
+    }
+    .deco-triangle {
+      width: 0; height: 0;
+      border-left: 40px solid transparent;
+      border-right: 40px solid transparent;
+      border-bottom: 70px solid var(--accent);
+      top: 35%; left: -20px;
+      opacity: 0.2;
+    }
+
+    /* ── header ── */
+    header {
+      position: relative;
+      z-index: 10;
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--card);
+      border-bottom: 2px solid var(--fg);
+      box-shadow: 0 4px 0 var(--fg);
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+    }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: var(--accent);
+      border-radius: 10px;
+      border: 2px solid var(--fg);
+      box-shadow: 3px 3px 0 var(--fg);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .logo-text {
+      font-family: var(--font-head);
+      font-weight: 800;
+      font-size: 18px;
+      color: var(--fg);
+    }
+    .logo-text span { color: var(--accent); }
+
+    nav { display: flex; align-items: center; gap: 8px; }
+    nav a {
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--fg);
+      text-decoration: none;
+      padding: 6px 14px;
+      border: 2px solid transparent;
+      border-radius: 999px;
+      transition: all 0.2s var(--bounce);
+    }
+    nav a:hover {
+      background: var(--tertiary);
+      border-color: var(--fg);
+      box-shadow: 3px 3px 0 var(--fg);
+      transform: translate(-1px, -1px);
+    }
+
+    .index-badge {
+      font-size: 12px;
+      font-weight: 600;
+      background: var(--muted);
+      border: 2px solid var(--border);
+      border-radius: 999px;
+      padding: 4px 12px;
+      color: var(--muted-fg);
+    }
+    .index-badge strong { color: var(--accent); }
+
+    /* ── hero search area ── */
+    .hero {
+      position: relative;
+      z-index: 5;
+      text-align: center;
+      padding: 56px 32px 40px;
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--tertiary);
+      border: 2px solid var(--fg);
+      border-radius: 999px;
+      padding: 4px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      box-shadow: 3px 3px 0 var(--fg);
+      margin-bottom: 20px;
+      font-family: var(--font-body);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .hero-tag .dot { width: 7px; height: 7px; background: var(--fg); border-radius: 50%; }
+
+    .hero h1 {
+      font-family: var(--font-head);
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 12px;
+      color: var(--fg);
+    }
+    .hero h1 .hl-violet { color: var(--accent); }
+    .hero h1 .hl-pink   { color: var(--secondary); }
+
+    .hero-sub {
+      font-size: 15px;
+      color: var(--muted-fg);
+      margin-bottom: 32px;
+      max-width: 480px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.6;
+    }
+
+    /* ── search bar ── */
+    .search-container {
+      max-width: 640px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .search-wrap {
+      display: flex;
+      background: var(--card);
+      border: 2px solid var(--fg);
+      border-radius: 999px;
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      transition: box-shadow 0.2s var(--bounce), transform 0.2s var(--bounce);
+    }
+    .search-wrap:focus-within {
+      box-shadow: 6px 6px 0 var(--accent);
+      transform: translate(-2px, -2px);
+    }
+
+    .search-input-wrap {
+      flex: 1;
+      position: relative;
+    }
+
+    #search-input {
+      width: 100%;
+      padding: 14px 20px;
+      font-size: 15px;
+      font-family: var(--font-body);
+      border: none;
+      outline: none;
+      background: transparent;
+      color: var(--fg);
+    }
+    #search-input::placeholder { color: var(--muted-fg); }
+
+    #suggestions {
+      display: none;
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0; right: 0;
+      background: var(--card);
+      border: 2px solid var(--fg);
+      border-radius: 16px;
+      box-shadow: var(--shadow-lg);
+      z-index: 100;
+      overflow: hidden;
+    }
+
+    .suggestion-item {
+      padding: 10px 20px;
+      font-size: 14px;
+      cursor: pointer;
+      font-family: var(--font-body);
+      color: var(--fg);
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .suggestion-item::before {
+      content: '⌕';
+      color: var(--muted-fg);
+      font-size: 16px;
+    }
+    .suggestion-item:last-child { border-bottom: none; }
+    .suggestion-item:hover { background: var(--tertiary); }
+
+    .search-btn {
+      padding: 10px 22px;
+      margin: 5px;
+      background: var(--accent);
+      color: white;
+      font-family: var(--font-head);
+      font-weight: 700;
+      font-size: 14px;
+      border: 2px solid var(--fg);
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.2s var(--bounce);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .search-btn:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 4px 4px 0 var(--fg);
+    }
+    .search-btn:active {
+      transform: translate(1px, 1px);
+      box-shadow: 1px 1px 0 var(--fg);
+    }
+
+    /* ── smart banners ── */
+    .banner {
+      max-width: 800px;
+      margin: 12px auto 0;
+      padding: 10px 20px;
+      border: 2px solid var(--fg);
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .banner-spell {
+      background: var(--tertiary);
+      box-shadow: 3px 3px 0 var(--fg);
+    }
+    .banner-expand {
+      background: #EDE9FE;
+      box-shadow: 3px 3px 0 var(--fg);
+      margin-top: 8px;
+    }
+    .banner a {
+      color: var(--accent);
+      font-weight: 700;
+      text-decoration: underline;
+    }
+    .banner-icon { font-size: 16px; }
+
+    /* ── main content ── */
+    main {
+      position: relative;
+      z-index: 5;
+      padding: 0 32px 60px;
+      max-width: 920px;
+      margin: 0 auto;
+    }
+
+    /* ── result count ── */
+    .result-count {
+      font-size: 13px;
+      color: var(--muted-fg);
+      margin: 20px 0 16px;
+      font-weight: 500;
+    }
+    .result-count strong { color: var(--fg); font-weight: 700; }
+
+    /* ── result cards ── */
+    .result {
+      background: var(--card);
+      border: 2px solid var(--fg);
+      border-radius: 16px;
+      padding: 18px 22px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      transition: all 0.25s var(--bounce);
+      position: relative;
+      overflow: hidden;
+    }
+    .result::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 5px; height: 100%;
+      background: var(--accent);
+      transition: width 0.2s var(--bounce);
+    }
+    .result:hover {
+      transform: translate(-3px, -3px);
+      box-shadow: 7px 7px 0 var(--fg);
+    }
+    .result:hover::before { width: 8px; }
+    .result:nth-child(3n)::before   { background: var(--secondary); }
+    .result:nth-child(3n+2)::before { background: var(--quaternary); }
+
+    .result-title {
+      font-family: var(--font-head);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 4px;
+      line-height: 1.3;
+    }
+    .result-title:hover { text-decoration: underline; }
+
+    .result-url {
+      font-size: 11px;
+      color: var(--quaternary);
+      margin-bottom: 8px;
+      font-weight: 600;
+      word-break: break-all;
+    }
+
+    .result-snippet {
+      font-size: 13px;
+      color: var(--muted-fg);
+      line-height: 1.65;
+      margin-bottom: 10px;
+    }
+    .result-snippet mark {
+      background: var(--tertiary);
+      color: var(--fg);
+      padding: 0 3px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .result-meta {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .tag {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 2px solid var(--fg);
+      font-family: var(--font-body);
+      letter-spacing: 0.02em;
+    }
+    .tag-doc   { background: var(--muted); color: var(--muted-fg); }
+    .tag-score { background: var(--accent); color: white; }
+    .tag-bm25  { background: #EDE9FE; color: var(--accent); }
+    .tag-sem   { background: #FCE7F3; color: #BE185D; }
+    .tag-pr    { background: #ECFDF5; color: #065F46; }
+
+    /* ── empty / no results ── */
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+    }
+    .empty-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+      display: block;
+    }
+    .empty-state h2 {
+      font-family: var(--font-head);
+      font-size: 24px;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .empty-state p {
+      color: var(--muted-fg);
+      font-size: 14px;
+      margin-top: 6px;
+    }
+
+    /* ── hero empty state ── */
+    .hero-empty {
+      margin-top: 40px;
+    }
+    .chip-row {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+    .chip {
+      padding: 8px 18px;
+      border: 2px solid var(--fg);
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s var(--bounce);
+      background: var(--card);
+      font-family: var(--font-body);
+    }
+    .chip:nth-child(1) { background: #EDE9FE; color: var(--accent); }
+    .chip:nth-child(2) { background: #FCE7F3; color: #BE185D; }
+    .chip:nth-child(3) { background: #FEF9C3; color: #854D0E; }
+    .chip:nth-child(4) { background: #ECFDF5; color: #065F46; }
+    .chip:nth-child(5) { background: #EDE9FE; color: var(--accent); }
+    .chip:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 4px 4px 0 var(--fg);
+    }
+
+    /* ── stats strip ── */
+    .stats-strip {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+    .stat-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--card);
+      border: 2px solid var(--fg);
+      border-radius: 999px;
+      padding: 6px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      box-shadow: 3px 3px 0 var(--fg);
+    }
+    .stat-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+    }
+
+    @media (max-width: 640px) {
+      header { padding: 14px 16px; flex-wrap: wrap; gap: 8px; }
+      .hero { padding: 28px 16px 20px; }
+      .hero h1 { font-size: 1.7rem; }
+      main { padding: 0 16px 40px; }
+      .logo-text { font-size: 15px; }
+      nav { display: none; }
+      .index-badge { font-size: 11px; padding: 3px 10px; }
+      .search-wrap { border-radius: 14px; }
+      .search-btn { padding: 8px 16px; font-size: 13px; }
+      #search-input { font-size: 14px; padding: 12px 16px; }
+      .chip-row { gap: 6px; }
+      .stats-strip { gap: 8px; }
+      .stat-pill { font-size: 11px; padding: 4px 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- decorative shapes -->
+<div class="deco deco-circle-1"></div>
+<div class="deco deco-circle-2"></div>
+<div class="deco deco-square"></div>
+<div class="deco deco-triangle"></div>
+
+<header>
+  <a href="/" class="logo">
+    <div class="logo-icon">🔍</div>
+    <span class="logo-text">PDC<span>Search</span></span>
+  </a>
+  <nav>
+    <a href="/analytics">Analytics</a>
+    <a href="/collaborative">Collaborative</a>
+    <a href="/about">About</a>
+  </nav>
+  <div class="index-badge">
+    <strong>{{ total_terms|default(0)|int }}</strong> terms &nbsp;·&nbsp;
+    <strong>{{ total_docs|default(0)|int }}</strong> docs
+  </div>
+</header>
+
+<!-- hero search -->
+<div class="hero">
+  <div class="hero-tag">
+    <span class="dot"></span>
+    Distributed · MapReduce · BM25 + BERT
+  </div>
+  <h1>Search <span class="hl-violet">smarter</span>,<br>not <span class="hl-pink">harder</span></h1>
+  <p class="hero-sub">
+    A fully distributed search engine — parallel crawling, MapReduce indexing, BERT semantics, and PageRank. All from scratch.
+  </p>
+
+  <div class="search-container">
+    <form method="GET" action="/" onsubmit="return true">
+      <div class="search-wrap">
+        <div class="search-input-wrap">
+          <input
+            type="text"
+            name="q"
+            id="search-input"
+            value="{{ query }}"
+            placeholder="Search {{ total_docs|default(22740) }} pages across 5 domains..."
+            autofocus
+            autocomplete="off"
+          >
+          <div id="suggestions"></div>
+        </div>
+        <button type="submit" class="search-btn">
+          Search →
+        </button>
+      </div>
+    </form>
+
+    {% if corrected_query %}
+    <div class="banner banner-spell">
+      <span class="banner-icon">✨</span>
+      Did you mean:
+      <a href="/?q={{ corrected_query }}">{{ corrected_query }}</a>?
+      {% for orig, fix in spell_corrections.items() %}
+        <span style="color:var(--muted-fg);font-weight:400">"{{ orig }}" → "{{ fix }}"</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if expansions_map %}
+    <div class="banner banner-expand">
+      <span class="banner-icon">🔗</span>
+      Expanded:
+      {% for term, syns in expansions_map.items() %}
+        <strong>{{ term }}</strong> + {{ syns | join(', ') }}{% if not loop.last %} &nbsp;|&nbsp; {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<main>
+  {% if query %}
+    {% if results %}
+      <div class="result-count">
+        Found <strong>{{ results|length }} results</strong> for "<strong>{{ query }}</strong>"
+      </div>
+
+      {% for r in results %}
+      <div class="result" data-doc-id="{{ r.doc_id }}" onclick="handleClick(event, {{ r.doc_id }}, '{{ r.url }}', {{ loop.index }})">
+        <div class="result-title">{{ r.title }}</div>
+        <div class="result-url">{{ r.url }}</div>
+        {% if r.snippet %}
+          <div class="result-snippet">{{ r.snippet|safe }}</div>
+        {% endif %}
+        <div class="result-meta">
+          <span class="tag tag-doc">doc #{{ r.doc_id }}</span>
+          <span class="tag tag-score">score {{ r.score }}</span>
+          {% if r.bm25 %}<span class="tag tag-bm25">bm25 {{ r.bm25 }}</span>{% endif %}
+          {% if r.semantic %}<span class="tag tag-sem">sem {{ r.semantic }}</span>{% endif %}
+          {% if r.pagerank %}<span class="tag tag-pr">pr {{ r.pagerank }}</span>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+
+    {% else %}
+      <div class="empty-state">
+        <span class="empty-icon">🔭</span>
+        <h2>No results for "{{ query }}"</h2>
+        <p>Try a different keyword — the index contains {{ total_terms }} terms.</p>
+        <p style="margin-top:8px">Or check your spelling above.</p>
+      </div>
+    {% endif %}
+
+  {% else %}
+    <div class="hero-empty">
+      <p style="text-align:center;color:var(--muted-fg);font-size:13px;font-weight:600;letter-spacing:.05em;text-transform:uppercase">Try searching for</p>
+      <div class="chip-row">
+        <div class="chip" onclick="setQ('distributed computing')">distributed computing</div>
+        <div class="chip" onclick="setQ('python programming')">python programming</div>
+        <div class="chip" onclick="setQ('web crawler')">web crawler</div>
+        <div class="chip" onclick="setQ('machine learning')">machine learning</div>
+        <div class="chip" onclick="setQ('fault tolerance')">fault tolerance</div>
+      </div>
+      <div class="stats-strip">
+        <div class="stat-pill">
+          <div class="stat-dot" style="background:var(--accent)"></div>
+          {{ total_terms|default(0)|int }} unique terms
+        </div>
+        <div class="stat-pill">
+          <div class="stat-dot" style="background:var(--secondary)"></div>
+          {{ total_docs|default(0)|int }} documents
+        </div>
+        <div class="stat-pill">
+          <div class="stat-dot" style="background:var(--quaternary)"></div>
+          BM25 + BERT ranking
+        </div>
+        <div class="stat-pill">
+          <div class="stat-dot" style="background:var(--tertiary)"></div>
+          PageRank authority
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</main>
+
+<script>
+// ── autocomplete ──────────────────────────────────────────────────────────────
+const input = document.getElementById("search-input");
+const box   = document.getElementById("suggestions");
+let active  = -1;
+
+input.addEventListener("input", async () => {
+  const val      = input.value.trim();
+  const lastWord = val.split(" ").pop();
+  if (lastWord.length < 2) { box.style.display = "none"; return; }
+
+  const resp = await fetch(`/api/suggest?prefix=${encodeURIComponent(lastWord)}`);
+  const data = await resp.json();
+  const items = data.suggestions || [];
+  active = -1;
+
+  if (!items.length) { box.style.display = "none"; return; }
+
+  box.innerHTML = items.map((s, i) =>
+    `<div class="suggestion-item" data-idx="${i}">${s}</div>`
+  ).join("");
+
+  box.querySelectorAll(".suggestion-item").forEach(el => {
+    el.addEventListener("mousedown", e => {
+      e.preventDefault();
+      const words = input.value.split(" ");
+      words[words.length - 1] = el.textContent;
+      input.value = words.join(" ");
+      box.style.display = "none";
+    });
+  });
+
+  box.style.display = "block";
+});
+
+input.addEventListener("keydown", e => {
+  const rows = box.querySelectorAll(".suggestion-item");
+  if (e.key === "ArrowDown") { e.preventDefault(); active = Math.min(active + 1, rows.length - 1); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); active = Math.max(active - 1, -1); }
+  else if (e.key === "Enter" && active >= 0) {
+    e.preventDefault();
+    const words = input.value.split(" ");
+    words[words.length - 1] = rows[active].textContent;
+    input.value = words.join(" ");
+    box.style.display = "none";
+  } else if (e.key === "Escape") { box.style.display = "none"; active = -1; }
+  rows.forEach((r, i) => r.style.background = i === active ? "var(--tertiary)" : "");
+});
+
+document.addEventListener("click", e => {
+  if (!e.target.closest(".search-input-wrap")) box.style.display = "none";
+});
+
+// ── click tracking ────────────────────────────────────────────────────────────
+function handleClick(event, docId, url, position) {
+  event.stopPropagation();
+  const query = new URLSearchParams(window.location.search).get("q") || "";
+  if (query && docId !== null) {
+    fetch("/api/click", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({query, doc_id: docId, position})
+    });
+  }
+  window.open(url, "_blank");
+}
+
+function setQ(q) {
+  document.getElementById("search-input").value = q;
+  document.querySelector("form").submit();
+}
+</script>
+</body>
+</html>

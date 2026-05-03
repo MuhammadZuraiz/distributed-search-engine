@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDC Search — About</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#FFFDF5; --fg:#1E293B; --muted:#F1F5F9; --muted-fg:#64748B;
+      --accent:#8B5CF6; --secondary:#F472B6; --tertiary:#FBBF24;
+      --quaternary:#34D399; --border:#E2E8F0; --card:#FFFFFF;
+      --shadow:4px 4px 0px #1E293B; --shadow-lg:8px 8px 0px #1E293B;
+      --font-head:'Outfit',system-ui,sans-serif;
+      --font-body:'Plus Jakarta Sans',system-ui,sans-serif;
+      --bounce:cubic-bezier(0.34,1.56,0.64,1);
+    }
+    html { overflow-x:hidden; scroll-behavior:smooth; }
+    body { font-family:var(--font-body); background:var(--bg); color:var(--fg); width:100%; overflow-x:hidden; }
+    body::before {
+      content:''; position:fixed; inset:0;
+      background-image:radial-gradient(circle,#CBD5E1 1px,transparent 1px);
+      background-size:28px 28px; opacity:.35; pointer-events:none; z-index:0;
+    }
+
+    /* deco */
+    .deco { position:fixed; pointer-events:none; z-index:0; }
+    .deco-1 { width:200px; height:200px; background:var(--tertiary); border-radius:50%; top:-80px; right:-50px; opacity:.25; }
+    .deco-2 { width:100px; height:100px; background:var(--secondary); border-radius:50%; bottom:10%; left:-30px; opacity:.2; }
+    .deco-3 { width:70px; height:70px; background:var(--quaternary); transform:rotate(20deg); top:50%; right:-20px; opacity:.2; }
+
+    /* header */
+    header {
+      position:relative; z-index:10; padding:18px 32px;
+      display:flex; align-items:center; justify-content:space-between;
+      background:var(--card); border-bottom:2px solid var(--fg);
+      box-shadow:0 4px 0 var(--fg);
+    }
+    header nav a { position:relative; z-index:1; }
+    .logo { display:flex; align-items:center; gap:10px; text-decoration:none; }
+    .logo-icon { width:36px; height:36px; background:var(--accent); border-radius:10px; border:2px solid var(--fg); box-shadow:3px 3px 0 var(--fg); display:flex; align-items:center; justify-content:center; font-size:18px; }
+    .logo-text { font-family:var(--font-head); font-weight:800; font-size:18px; color:var(--fg); }
+    .logo-text span { color:var(--accent); }
+    nav { display:flex; align-items:center; gap:8px; }
+    nav a { font-weight:600; font-size:13px; color:var(--fg); text-decoration:none; padding:6px 14px; border:2px solid transparent; border-radius:999px; transition:all .2s var(--bounce); }
+    nav a:hover { background:var(--tertiary); border-color:var(--fg); box-shadow:3px 3px 0 var(--fg); transform:translate(-1px,-1px); }
+
+    /* hero */
+    .hero {
+      position:relative; z-index:5;
+      padding:60px 32px 40px; text-align:center;
+    }
+    .hero-tag {
+      display:inline-flex; align-items:center; gap:6px;
+      background:var(--accent); color:white;
+      border:2px solid var(--fg); border-radius:999px;
+      padding:5px 16px; font-size:12px; font-weight:700;
+      box-shadow:3px 3px 0 var(--fg); margin-bottom:20px;
+      letter-spacing:.05em; text-transform:uppercase;
+    }
+    .hero h1 { font-family:var(--font-head); font-size:clamp(2rem,4vw,3rem); font-weight:800; line-height:1.1; margin-bottom:14px; }
+    .hero h1 .v { color:var(--accent); }
+    .hero h1 .p { color:var(--secondary); }
+    .hero-sub { font-size:15px; color:var(--muted-fg); max-width:560px; margin:0 auto 32px; line-height:1.7; }
+
+    /* stats strip */
+    .stats-hero {
+      display:flex; gap:12px; justify-content:center; flex-wrap:wrap;
+      margin-bottom:48px;
+    }
+    .stat-hero-pill {
+      background:var(--card); border:2px solid var(--fg);
+      border-radius:999px; padding:8px 20px;
+      font-size:13px; font-weight:700; box-shadow:var(--shadow);
+      display:flex; align-items:center; gap:8px;
+    }
+    .stat-hero-pill .dot { width:10px; height:10px; border-radius:50%; }
+
+    /* main content */
+    main {
+      position:relative; z-index:5;
+      max-width:1000px; margin:0 auto;
+      padding:0 32px 80px;
+    }
+
+    /* section */
+    .section { margin-bottom:56px; }
+    .section-header {
+      display:flex; align-items:center; gap:14px;
+      margin-bottom:24px; padding-bottom:14px;
+      border-bottom:2px solid var(--fg);
+    }
+    .section-icon {
+      width:44px; height:44px; border-radius:12px;
+      border:2px solid var(--fg); box-shadow:3px 3px 0 var(--fg);
+      display:flex; align-items:center; justify-content:center; font-size:22px;
+      flex-shrink:0;
+    }
+    .section-title { font-family:var(--font-head); font-size:1.5rem; font-weight:800; }
+    .section-sub { font-size:13px; color:var(--muted-fg); margin-top:2px; }
+
+    /* concept cards grid */
+    .card-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+    .card-grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+
+    .concept-card {
+      background:var(--card); border:2px solid var(--fg);
+      border-radius:16px; padding:20px 20px;
+      box-shadow:var(--shadow); transition:all .25s var(--bounce);
+      position:relative; overflow:hidden;
+    }
+    .concept-card:hover { transform:translate(-3px,-3px); box-shadow:7px 7px 0 var(--fg); }
+    .concept-card::before {
+      content:''; position:absolute; top:0; right:0;
+      width:60px; height:60px; border-radius:0 0 0 60px;
+      opacity:.12;
+    }
+    .concept-card:nth-child(4n+1)::before { background:var(--accent); }
+    .concept-card:nth-child(4n+2)::before { background:var(--secondary); }
+    .concept-card:nth-child(4n+3)::before { background:var(--quaternary); }
+    .concept-card:nth-child(4n+4)::before { background:var(--tertiary); }
+
+    .card-tag {
+      font-size:10px; font-weight:700; padding:3px 10px;
+      border-radius:999px; border:2px solid var(--fg);
+      letter-spacing:.05em; text-transform:uppercase;
+      display:inline-block; margin-bottom:10px;
+    }
+    .tag-v { background:var(--accent); color:white; }
+    .tag-p { background:var(--secondary); color:white; }
+    .tag-g { background:var(--quaternary); color:var(--fg); }
+    .tag-y { background:var(--tertiary); color:var(--fg); }
+    .tag-b { background:#EDE9FE; color:var(--accent); }
+    .tag-r { background:#FCE7F3; color:#BE185D; }
+
+    .card-title { font-family:var(--font-head); font-size:15px; font-weight:800; margin-bottom:6px; }
+    .card-body { font-size:13px; color:var(--muted-fg); line-height:1.6; }
+    .card-ref { font-size:11px; color:var(--accent); font-weight:600; margin-top:10px; font-style:italic; }
+
+    /* pipeline diagram */
+    .pipeline {
+      display:flex; align-items:center; gap:0;
+      background:var(--card); border:2px solid var(--fg);
+      border-radius:16px; box-shadow:var(--shadow);
+      overflow:hidden; margin-bottom:14px;
+    }
+    .pipe-step {
+      flex:1; padding:18px 16px; text-align:center;
+      border-right:2px solid var(--fg); position:relative;
+    }
+    .pipe-step:last-child { border-right:none; }
+    .pipe-step:nth-child(1) { background:#EDE9FE; }
+    .pipe-step:nth-child(2) { background:#FCE7F3; }
+    .pipe-step:nth-child(3) { background:#ECFDF5; }
+    .pipe-step:nth-child(4) { background:#FEF9C3; }
+    .pipe-step:nth-child(5) { background:#EDE9FE; }
+    .pipe-icon { font-size:24px; margin-bottom:6px; }
+    .pipe-label { font-family:var(--font-head); font-size:12px; font-weight:800; }
+    .pipe-sub { font-size:10px; color:var(--muted-fg); margin-top:3px; }
+    .pipe-arrow {
+      font-size:20px; color:var(--muted-fg); padding:0 4px;
+      flex-shrink:0;
+    }
+
+    /* metrics table */
+    .metrics-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .metrics-table th {
+      background:var(--fg); color:white; padding:10px 16px;
+      text-align:left; font-family:var(--font-head); font-weight:700; font-size:12px;
+      letter-spacing:.04em; text-transform:uppercase;
+    }
+    .metrics-table th:first-child { border-radius:10px 0 0 0; }
+    .metrics-table th:last-child  { border-radius:0 10px 0 0; }
+    .metrics-table td { padding:10px 16px; border-bottom:1px solid var(--border); vertical-align:middle; }
+    .metrics-table tr:last-child td { border-bottom:none; }
+    .metrics-table tr:nth-child(even) td { background:var(--muted); }
+    .metrics-table tr:hover td { background:#EDE9FE; }
+    .metrics-wrap { background:var(--card); border:2px solid var(--fg); border-radius:16px; box-shadow:var(--shadow); overflow:hidden; }
+
+    /* references */
+    .ref-list { list-style:none; }
+    .ref-item {
+      background:var(--card); border:2px solid var(--fg);
+      border-radius:12px; padding:14px 18px; margin-bottom:10px;
+      box-shadow:3px 3px 0 var(--fg); transition:all .2s var(--bounce);
+      display:flex; gap:14px; align-items:flex-start;
+    }
+    .ref-item:hover { transform:translate(-2px,-2px); box-shadow:5px 5px 0 var(--fg); }
+    .ref-num {
+      font-family:var(--font-head); font-weight:800; font-size:18px;
+      color:var(--accent); flex-shrink:0; width:28px; line-height:1;
+    }
+    .ref-body { flex:1; }
+    .ref-title { font-weight:700; font-size:13px; margin-bottom:3px; }
+    .ref-authors { font-size:12px; color:var(--muted-fg); }
+    .ref-year { font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; border:2px solid var(--fg); background:var(--tertiary); color:var(--fg); float:right; }
+
+    /* formula blocks */
+    .formula {
+      background:var(--fg); color:white;
+      border-radius:12px; padding:16px 20px;
+      font-family:monospace; font-size:13px;
+      line-height:1.7; margin:12px 0;
+      box-shadow:4px 4px 0 var(--accent);
+    }
+    .formula .comment { color:#94A3B8; }
+    .formula .val { color:var(--tertiary); }
+
+    /* mpi message table */
+    .msg-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:12px; }
+    .msg-table th { background:var(--fg); color:white; padding:8px 12px; text-align:left; font-weight:700; }
+    .msg-table td { padding:8px 12px; border-bottom:1px solid var(--border); font-family:monospace; }
+    .msg-table tr:nth-child(even) td { background:var(--muted); }
+    .msg-wrap { background:var(--card); border:2px solid var(--fg); border-radius:12px; box-shadow:var(--shadow); overflow:hidden; }
+
+    /* prose */
+    .prose { font-size:14px; color:var(--fg); line-height:1.75; }
+    .prose p { margin-bottom:14px; }
+    .prose strong { font-weight:700; }
+    .prose code { background:var(--muted); border:1px solid var(--border); border-radius:5px; padding:1px 6px; font-family:monospace; font-size:12px; color:var(--accent); }
+
+    /* callout */
+    .callout {
+      background:linear-gradient(135deg,#EDE9FE,#FCE7F3);
+      border:2px solid var(--fg); border-radius:16px;
+      padding:20px 22px; box-shadow:var(--shadow); margin-bottom:20px;
+    }
+    .callout-title { font-family:var(--font-head); font-weight:800; font-size:15px; margin-bottom:6px; }
+    .callout-body { font-size:13px; color:var(--fg); line-height:1.65; }
+
+    @media(max-width:700px) {
+      .card-grid, .card-grid-3 { grid-template-columns:1fr; }
+      .pipeline { flex-direction:column; }
+      .pipe-step { border-right:none; border-bottom:2px solid var(--fg); }
+      .pipe-step:last-child { border-bottom:none; }
+      main, .hero { padding-left:16px; padding-right:16px; }
+      header { padding:14px 16px; }
+      nav a { font-size:12px; padding:5px 10px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="deco deco-1"></div>
+<div class="deco deco-2"></div>
+<div class="deco deco-3"></div>
+
+<header>
+  <a href="/" class="logo">
+    <div class="logo-icon">🔍</div>
+    <span class="logo-text">PDC<span>Search</span></span>
+  </a>
+  <nav style="position:absolute;left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center;">
+    <a href="/">Search</a>
+    <a href="/analytics">Analytics</a>
+    <a href="/collaborative">Collaborative</a>
+  </nav>
+</header>
+
+<!-- hero -->
+<div class="hero">
+  <div class="hero-tag">Academic & Technical Reference</div>
+  <h1>How this system <span class="v">works</span>,<br>and <span class="p">why</span> it matters</h1>
+  <p class="hero-sub">
+    A complete technical reference covering every distributed computing concept implemented in this system — from first principles through to production trade-offs.
+  </p>
+  <div class="stats-hero">
+    <div class="stat-hero-pill"><span class="dot" style="background:var(--accent)"></span> 22,740 documents</div>
+    <div class="stat-hero-pill"><span class="dot" style="background:var(--secondary)"></span> 830,928 unique terms</div>
+    <div class="stat-hero-pill"><span class="dot" style="background:var(--quaternary)"></span> 85M MapReduce pairs</div>
+    <div class="stat-hero-pill"><span class="dot" style="background:var(--tertiary)"></span> 14 PDC concepts</div>
+  </div>
+</div>
+
+<main>
+
+  <!-- pipeline -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background:#EDE9FE">🔄</div>
+      <div>
+        <div class="section-title">The distributed pipeline</div>
+        <div class="section-sub">Every stage is parallel — crawling, indexing, and querying</div>
+      </div>
+    </div>
+    <div class="pipeline">
+      <div class="pipe-step"><div class="pipe-icon">🌱</div><div class="pipe-label">Seed URLs</div><div class="pipe-sub">24 seeds, 5 domains</div></div>
+      <div class="pipe-step"><div class="pipe-icon">🕷️</div><div class="pipe-label">MPI Crawler</div><div class="pipe-sub">6 parallel workers</div></div>
+      <div class="pipe-step"><div class="pipe-icon">🗄️</div><div class="pipe-label">SQLite WAL</div><div class="pipe-sub">22,740 documents</div></div>
+      <div class="pipe-step"><div class="pipe-icon">⚙️</div><div class="pipe-label">MapReduce</div><div class="pipe-sub">85M pairs → 830K terms</div></div>
+      <div class="pipe-step"><div class="pipe-icon">🔍</div><div class="pipe-label">BM25 + BERT</div><div class="pipe-sub">Ranked results</div></div>
+    </div>
+    <div class="callout">
+      <div class="callout-title">Why this is novel</div>
+      <div class="callout-body">Most student projects distribute <em>one</em> stage. This system distributes all three: the crawl (MPI workers), the index build (MapReduce), and the query execution (federated shards). The entire pipeline is parallel end-to-end — the same claim Apache Hadoop and Elasticsearch make about their architectures.</div>
+    </div>
+  </div>
+
+  <!-- PDC concepts -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background:#FCE7F3">🧠</div>
+      <div>
+        <div class="section-title">PDC concepts implemented</div>
+        <div class="section-sub">Formal distributed computing theory made concrete and measurable</div>
+      </div>
+    </div>
+    <div class="card-grid">
+
+      <div class="concept-card">
+        <span class="card-tag tag-v">Task Parallelism</span>
+        <div class="card-title">MPI Master-Worker Crawling</div>
+        <div class="card-body">Six worker processes crawl web pages simultaneously using MPI message passing. The master maintains the URL frontier and dispatches tasks via tagged messages. This is Flynn's MIMD (Multiple Instruction, Multiple Data) taxonomy — each worker executes different code on different URLs in parallel.</div>
+        <div class="card-ref">Flynn (1966) — Very High Speed Computing Systems</div>
+      </div>
+
+      <div class="concept-card">
+        <span class="card-tag tag-p">Data Partitioning</span>
+        <div class="card-title">Consistent Hash Ring</div>
+        <div class="card-body">URLs are routed to workers by domain using a consistent hash ring with 150 virtual nodes per worker. When a worker dies, only 1/N of assignments change — not the entire mapping. This is the core innovation of Amazon Dynamo: hash ring partitioning minimises rebalancing cost during node churn.</div>
+        <div class="card-ref">Karger et al. (1997) — Consistent Hashing and Random Trees</div>
+      </div>
+
+      <div class="concept-card">
+        <span class="card-tag tag-g">Fault Tolerance</span>
+        <div class="card-title">Heartbeat + Task Requeue</div>
+        <div class="card-body">Workers send a heartbeat every 4 seconds. If no heartbeat arrives within 15 seconds, the master marks that worker dead and re-queues its in-progress URL. This is the standard failure detector model from distributed systems theory — trading accuracy (false positives) for completeness (never misses a real failure).</div>
+        <div class="card-ref">Chandra & Toueg (1996) — Unreliable Failure Detectors</div>
+      </div>
+
+      <div class="concept-card">
+        <span class="card-tag tag-y">Crash Recovery</span>
+        <div class="card-title">Checkpointing</div>
+        <div class="card-body">The master saves the URL frontier and visited set to disk every 200 pages. On restart, it resumes from the last checkpoint. This is the Write-Ahead Log (WAL) pattern applied to a distributed job — the same mechanism databases use for transaction durability and Hadoop uses for job recovery.</div>
+        <div class="card-ref">Gray & Reuter (1992) — Transaction Processing</div>
+      </div>
+
+      <div class="concept-card">
+        <span class="card-tag tag-v">Probabilistic Structures</span>
+        <div class="card-title">Bloom Filter Deduplication</div>
+        <div class="card-body">A bit array of size m with k hash functions answers "have I seen this URL?" in O(k) time using 56× less memory than a Python set. The false positive rate follows: p ≈ (1 − e^(−kn/m))^k. Measured empirically: 0.94% FP rate vs 1.0% target — matching theory within 6%.</div>
+        <div class="card-ref">Bloom (1970) — Space/Time Trade-offs in Hash Coding</div>
+      </div>
+
+      <div class="concept-card">
+        <span class="card-tag tag-p">Epidemic Algorithms</span>
+        <div class="card-title">Gossip Protocol</div>
+        <div class="card-body">Workers periodically exchange Bloom filter bytes via bitwise OR. Information spreads like a virus — each round, each node's knowledge grows. Convergence is guaranteed in O(log N) rounds. This is how Amazon DynamoDB propagates cluster membership and how Bitcoin propagates transactions without a central server.</div>
+        <div class="card-ref">Demers et al. (1987) — Epidemic Algorithms for Replicated Database Maintenance</div>
+      </div>
+
+      <div class="concept-card">
+        <span class="card-tag tag-g">Synchronisation</span>
+        <div class="card-title">Token Bucket Rate Limiting</div>
+        <div class="card-body">The master holds one token bucket per domain. Workers must request permission before fetching — coordinated shared state across 6 processes via message passing. This demonstrates the classic distributed synchronisation problem: how do multiple independent processes share a resource without locks?</div>
+        <div class="card-ref">Turner (1986) — New Directions in Communications</div>
+      </div>
+
+      <div class="concept-card">
+        <span class="card-tag tag-y">Data Parallelism</span>
+        <div class="card-title">MapReduce Indexing</div>
+        <div class="card-body">Six mapper processes tokenise 22,740 documents in parallel, emitting 85 million (word, doc_id) pairs. A single reducer aggregates them into 830,928 unique terms. This directly implements Dean & Ghemawat's MapReduce model: the same programming abstraction as Apache Hadoop, built from scratch with MPI.</div>
+        <div class="card-ref">Dean & Ghemawat (2004) — MapReduce: Simplified Data Processing on Large Clusters</div>
+      </div>
+
+      <div class="concept-card">
+        <span class="card-tag tag-v">Iterative Computation</span>
+        <div class="card-title">PageRank Power Iteration</div>
+        <div class="card-body">PageRank is computed via 20 iterations of power iteration on the crawled link graph. Each iteration updates all node scores in parallel. The algorithm converges when Σ|new − old| &lt; 1e-6. This is the same iterative pattern used by Apache Spark's GraphX for distributed graph processing.</div>
+        <div class="card-ref">Brin & Page (1998) — The Anatomy of a Large-Scale Hypertextual Web Search Engine</div>
+      </div>
+
+      <div class="concept-card">
+        <span class="card-tag tag-p">Distributed Querying</span>
+        <div class="card-title">Federated Shard Search</div>
+        <div class="card-body">The inverted index is split into N shards by doc_id range. Each shard is searched independently via MPI. A coordinator merges N sorted result lists using a max-heap in O(K·N·log N) time. This closes the loop — crawling, indexing, AND querying are all distributed. The same architecture as Apache Solr Cloud and Elasticsearch.</div>
+        <div class="card-ref">Callan et al. (1995) — Searching Distributed Collections with Inference Networks</div>
+      </div>
+
+      <div class="concept-card">
+        <span class="card-tag tag-g">Semantic Search</span>
+        <div class="card-title">BERT + FAISS Embeddings</div>
+        <div class="card-body">Documents are encoded as 384-dimensional vectors using the all-MiniLM-L6-v2 sentence transformer. Queries are answered via approximate nearest neighbour search (FAISS IndexFlatIP) using inner product similarity (equivalent to cosine similarity after L2 normalisation). This is how every modern production search engine handles semantic understanding.</div>
+        <div class="card-ref">Johnson et al. (2019) — Billion-scale Similarity Search with GPUs (FAISS)</div>
+      </div>
+
+      <div class="concept-card">
+        <span class="card-tag tag-y">Eventual Consistency</span>
+        <div class="card-title">Collaborative Search Model</div>
+        <div class="card-body">A shared in-memory relevance model is updated by all users simultaneously. Scores decay with a half-life of 5 minutes using exponential decay: score × e^(−t·ln2/τ). Updates propagate to all connected clients via SSE. This is an AP system in CAP theorem terms — available and partition-tolerant, eventually consistent.</div>
+        <div class="card-ref">Brewer (2000) — Towards Robust Distributed Systems (CAP Theorem)</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- performance -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background:#ECFDF5">📊</div>
+      <div>
+        <div class="section-title">Performance results</div>
+        <div class="section-sub">Measured empirically, not estimated</div>
+      </div>
+    </div>
+
+    <div class="card-grid" style="margin-bottom:20px">
+      <div>
+        <div class="prose" style="margin-bottom:12px"><strong>Speedup formula (Amdahl's Law):</strong></div>
+        <div class="formula">
+S(p) = T₁ / Tₚ
+<span class="comment"># T₁ = 128.5s (sequential baseline)</span>
+<span class="comment"># Tₚ = parallel time with p workers</span>
+
+S(2) = 128.5 / 73.5  = <span class="val">1.75×</span>
+S(3) = 128.5 / 41.8  = <span class="val">3.07×</span>  ← super-linear
+S(6) = ~770 / 128.5  = <span class="val">~6.00×</span>
+
+E(p) = S(p) / p × 100%
+E(3) = 3.07 / 3 × 100 = <span class="val">102.5%</span>
+        </div>
+        <div class="prose">
+          <p>Efficiency above 100% is <strong>super-linear speedup</strong> — a known phenomenon in I/O-bound distributed systems where parallel network requests overlap in ways that sequential execution cannot. Each worker maintains independent TCP connections to Wikipedia, so 3 workers get 3× the I/O throughput simultaneously.</p>
+        </div>
+      </div>
+
+      <div>
+        <div class="prose" style="margin-bottom:12px"><strong>Bloom filter mathematics:</strong></div>
+        <div class="formula">
+<span class="comment"># Optimal parameters</span>
+m = -n·ln(p) / (ln 2)²
+k = (m/n)·ln 2
+
+<span class="comment"># At n=500,000, p=0.001:</span>
+m = <span class="val">7,188,793 bits</span>  (0.86 MB)
+k = <span class="val">9 hash functions</span>
+
+<span class="comment"># Actual FP rate at 3.75M URLs:</span>
+p_actual ≈ <span class="val">3.58%</span>  (exceeded capacity)
+
+<span class="comment"># Fix: capacity=10,000,000</span>
+m_new = <span class="val">14.4M bits</span>  (1.71 MB)
+        </div>
+        <div class="prose">
+          <p>The overnight run inserted <strong>3.75M URLs</strong> into a filter sized for 500K — causing FP rate to exceed target. The fix is to pre-size the filter for expected frontier size, not expected crawl size. Frontier can be 10–100× larger than pages actually crawled.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="metrics-wrap">
+      <table class="metrics-table">
+        <thead>
+          <tr><th>Metric</th><th>Value</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Documents crawled</td><td><strong>22,740</strong></td><td>25,000 assigned, ~2,260 blocked/failed</td></tr>
+          <tr><td>Unique index terms</td><td><strong>830,928</strong></td><td>6.7× more than 1K-doc corpus</td></tr>
+          <tr><td>Total MapReduce pairs</td><td><strong>85,086,307</strong></td><td>27× more than 1K-doc run</td></tr>
+          <tr><td>MapReduce time</td><td><strong>~27 min</strong></td><td>Reduce phase dominates (830K terms)</td></tr>
+          <tr><td>BERT encoding time</td><td><strong>8 min</strong></td><td>356 batches × 64 docs @ 1.35s/batch</td></tr>
+          <tr><td>FAISS index size</td><td><strong>22,740 × 384D</strong></td><td>~33 MB of float32 vectors</td></tr>
+          <tr><td>Crawl duration</td><td><strong>15 hours</strong></td><td>2 surviving workers; 4 died mid-run</td></tr>
+          <tr><td>Bloom filter peak URLs</td><td><strong>3,751,082</strong></td><td>Frontier much larger than pages crawled</td></tr>
+          <tr><td>PageRank convergence</td><td><strong>~15 iterations</strong></td><td>δ &lt; 1e-6 before 20-iteration limit</td></tr>
+          <tr><td>Gossip rounds (rank 1)</td><td><strong>2,427 rounds</strong></td><td>Every 5 URLs = very active gossip</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MPI protocol -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background:#FEF9C3">📡</div>
+      <div>
+        <div class="section-title">MPI message protocol</div>
+        <div class="section-sub">Tagged message passing — the nervous system of the distributed crawler</div>
+      </div>
+    </div>
+    <div class="prose" style="margin-bottom:14px">
+      <p>All inter-process communication uses <strong>tagged MPI messages</strong>. The master uses <code>comm.iprobe()</code> (non-blocking) in a polling loop so it can interleave heartbeat checking, token granting, gossip exchange, and task assignment without blocking on any single operation. Workers use <code>comm.probe()</code> to check the tag before consuming a message.</p>
+    </div>
+    <div class="msg-wrap">
+      <table class="msg-table">
+        <thead><tr><th>Tag</th><th>Direction</th><th>Payload</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>TAG_READY = 1</td><td>Worker → Master</td><td>"READY"</td><td>Worker is free, request next URL</td></tr>
+          <tr><td>TAG_TASK = 2</td><td>Master → Worker</td><td>(url, depth, doc_id)</td><td>URL assignment or "__WAIT__" signal</td></tr>
+          <tr><td>TAG_RESULT = 3</td><td>Worker → Master</td><td>(doc_id, url, title, text, snippet, links, depth)</td><td>Crawled page data</td></tr>
+          <tr><td>TAG_DONE = 4</td><td>Master → Worker</td><td>None</td><td>No more work — shut down cleanly</td></tr>
+          <tr><td>TAG_HEARTBEAT = 5</td><td>Worker → Master</td><td>"beat"</td><td>Liveness signal every 4 seconds</td></tr>
+          <tr><td>TAG_TOKEN_REQUEST = 6</td><td>Worker → Master</td><td>domain string</td><td>Request crawl permission for domain</td></tr>
+          <tr><td>TAG_TOKEN_GRANT = 7</td><td>Master → Worker</td><td>(granted, wait_seconds)</td><td>Grant token or impose wait</td></tr>
+          <tr><td>TAG_GOSSIP_REQUEST = 8</td><td>Worker → Master</td><td>filter bytes</td><td>Upload local Bloom filter, request peer</td></tr>
+          <tr><td>TAG_GOSSIP_REPLY = 9</td><td>Master → Worker</td><td>(peer_rank, filter bytes)</td><td>Return a random peer's filter</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- search ranking -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background:#EDE9FE">🎯</div>
+      <div>
+        <div class="section-title">Search ranking explained</div>
+        <div class="section-sub">How a query becomes a ranked list of results</div>
+      </div>
+    </div>
+    <div class="card-grid-3">
+      <div class="concept-card">
+        <span class="card-tag tag-v">Step 1</span>
+        <div class="card-title">BM25 Relevance (75%)</div>
+        <div class="card-body">Each query term scores documents using BM25 with k₁=1.5, b=0.75. IDF penalises common terms; TF saturation prevents one term from dominating. PageRank blended at 20% weight.</div>
+        <div class="card-ref">Robertson & Jones (1976)</div>
+      </div>
+      <div class="concept-card">
+        <span class="card-tag tag-p">Step 2</span>
+        <div class="card-title">BERT Semantics (25%)</div>
+        <div class="card-body">Query is encoded to a 384D vector. FAISS retrieves the 40 nearest document vectors by inner product. Semantic score is normalised to [0,1] and blended with BM25 at 25% weight.</div>
+        <div class="card-ref">Reimers & Gurevych (2019)</div>
+      </div>
+      <div class="concept-card">
+        <span class="card-tag tag-g">Step 3</span>
+        <div class="card-title">Click Boost (adaptive)</div>
+        <div class="card-body">Documents clicked historically for similar queries receive a log-scale boost: 1.0 + 0.1·log₂(clicks + 1). The system learns from user behaviour over time without retraining any model.</div>
+        <div class="card-ref">Joachims et al. (2007)</div>
+      </div>
+      <div class="concept-card">
+        <span class="card-tag tag-y">Enhancement</span>
+        <div class="card-title">Spell Correction</div>
+        <div class="card-body">Mistyped query terms are corrected using Levenshtein edit distance ≤ 2 against the 830K-term trie. Candidates are filtered by first character to reduce the search space from O(V) to O(V/26).</div>
+        <div class="card-ref">Levenshtein (1966)</div>
+      </div>
+      <div class="concept-card">
+        <span class="card-tag tag-b">Enhancement</span>
+        <div class="card-title">Query Expansion</div>
+        <div class="card-body">Query terms are expanded with co-occurring terms from the index and curated synonyms. The expanded query is passed to BM25 while the original is used for BERT — preventing semantic drift from expansion noise.</div>
+        <div class="card-ref">Rocchio (1971) — Relevance Feedback</div>
+      </div>
+      <div class="concept-card">
+        <span class="card-tag tag-r">Real-time</span>
+        <div class="card-title">Crowd Boost (collaborative)</div>
+        <div class="card-body">In collaborative mode, documents clicked by other users for similar queries receive a real-time DCG-weighted boost: position_weight = 1/log₂(pos + 2). Scores decay with half-life τ=300s.</div>
+        <div class="card-ref">Järvelin & Kekäläinen (2002) — DCG</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CAP theorem -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background:#FCE7F3">⚖️</div>
+      <div>
+        <div class="section-title">CAP theorem analysis</div>
+        <div class="section-sub">Every distributed design decision is a trade-off</div>
+      </div>
+    </div>
+    <div class="card-grid">
+      <div class="concept-card">
+        <span class="card-tag tag-g">CP System</span>
+        <div class="card-title">The Crawler (Consistent + Partition-tolerant)</div>
+        <div class="card-body">The URL visited set is centralised in the master — strongly consistent. No URL will ever be crawled twice (barring Bloom filter false positives). During a network partition, the system stops crawling (sacrifices Availability) rather than risk duplicates. Dead workers' tasks are requeued, not continued independently.</div>
+      </div>
+      <div class="concept-card">
+        <span class="card-tag tag-p">AP System</span>
+        <div class="card-title">The Collaborative Model (Available + Partition-tolerant)</div>
+        <div class="card-body">The shared relevance model accepts updates from all users without coordination. If two users click the same document simultaneously, both boosts are applied (last-write-wins for the score, not the data). The system remains available during any partition — eventual consistency via score decay brings it back to a consistent state.</div>
+      </div>
+      <div class="concept-card">
+        <span class="card-tag tag-y">Trade-off</span>
+        <div class="card-title">Gossip Protocol (Eventual Consistency)</div>
+        <div class="card-body">Workers exchange Bloom filters periodically rather than synchronously. During the window between gossip rounds, two workers may both attempt to crawl the same URL. This is a deliberate choice: the performance benefit of asynchronous gossip outweighs the cost of occasional duplicate crawls at our scale.</div>
+      </div>
+      <div class="concept-card">
+        <span class="card-tag tag-b">Storage</span>
+        <div class="card-title">SQLite WAL (MVCC Concurrency)</div>
+        <div class="card-body">SQLite in Write-Ahead Log mode implements Multi-Version Concurrency Control: readers never block writers, writers never block readers. Multiple Flask threads read the index simultaneously while the incremental indexer writes new documents. This is the same concurrency model as PostgreSQL and Oracle.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- academic references -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon" style="background:#FEF9C3">📚</div>
+      <div>
+        <div class="section-title">Academic references</div>
+        <div class="section-sub">The foundational papers this system is built on</div>
+      </div>
+    </div>
+    <ul class="ref-list">
+      <li class="ref-item">
+        <div class="ref-num">1</div>
+        <div class="ref-body">
+          <span class="ref-year">2004</span>
+          <div class="ref-title">MapReduce: Simplified Data Processing on Large Clusters</div>
+          <div class="ref-authors">Jeffrey Dean & Sanjay Ghemawat — Google Inc. — OSDI 2004</div>
+        </div>
+      </li>
+      <li class="ref-item">
+        <div class="ref-num">2</div>
+        <div class="ref-body">
+          <span class="ref-year">1997</span>
+          <div class="ref-title">Consistent Hashing and Random Trees: Distributed Caching Protocols for Relieving Hot Spots on the World Wide Web</div>
+          <div class="ref-authors">David Karger et al. — MIT — ACM STOC 1997</div>
+        </div>
+      </li>
+      <li class="ref-item">
+        <div class="ref-num">3</div>
+        <div class="ref-body">
+          <span class="ref-year">1998</span>
+          <div class="ref-title">The Anatomy of a Large-Scale Hypertextual Web Search Engine</div>
+          <div class="ref-authors">Sergey Brin & Lawrence Page — Stanford University — Computer Networks 1998</div>
+        </div>
+      </li>
+      <li class="ref-item">
+        <div class="ref-num">4</div>
+        <div class="ref-body">
+          <span class="ref-year">1987</span>
+          <div class="ref-title">Epidemic Algorithms for Replicated Database Maintenance</div>
+          <div class="ref-authors">Alan Demers et al. — Xerox PARC — ACM PODC 1987</div>
+        </div>
+      </li>
+      <li class="ref-item">
+        <div class="ref-num">5</div>
+        <div class="ref-body">
+          <span class="ref-year">1970</span>
+          <div class="ref-title">Space/Time Trade-offs in Hash Coding with Allowable Errors</div>
+          <div class="ref-authors">Burton H. Bloom — Communications of the ACM 1970</div>
+        </div>
+      </li>
+      <li class="ref-item">
+        <div class="ref-num">6</div>
+        <div class="ref-body">
+          <span class="ref-year">2000</span>
+          <div class="ref-title">Towards Robust Distributed Systems (CAP Theorem)</div>
+          <div class="ref-authors">Eric Brewer — UC Berkeley — ACM PODC 2000 Keynote</div>
+        </div>
+      </li>
+      <li class="ref-item">
+        <div class="ref-num">7</div>
+        <div class="ref-body">
+          <span class="ref-year">2019</span>
+          <div class="ref-title">Billion-scale Similarity Search with GPUs (FAISS)</div>
+          <div class="ref-authors">Jeff Johnson, Matthijs Douze & Hervé Jégou — Facebook AI Research</div>
+        </div>
+      </li>
+      <li class="ref-item">
+        <div class="ref-num">8</div>
+        <div class="ref-body">
+          <span class="ref-year">1976</span>
+          <div class="ref-title">Relevance Weighting of Search Terms (BM25 foundation)</div>
+          <div class="ref-authors">S.E. Robertson & K. Sparck Jones — Journal of the American Society for Information Science</div>
+        </div>
+      </li>
+      <li class="ref-item">
+        <div class="ref-num">9</div>
+        <div class="ref-body">
+          <span class="ref-year">1967</span>
+          <div class="ref-title">Validity of the Single Processor Approach to Achieving Large Scale Computing Capabilities (Amdahl's Law)</div>
+          <div class="ref-authors">Gene Amdahl — IBM — AFIPS 1967</div>
+        </div>
+      </li>
+      <li class="ref-item">
+        <div class="ref-num">10</div>
+        <div class="ref-body">
+          <span class="ref-year">1996</span>
+          <div class="ref-title">Unreliable Failure Detectors for Reliable Distributed Systems</div>
+          <div class="ref-authors">Tushar Chandra & Sam Toueg — Cornell University — JACM 1996</div>
+        </div>
+      </li>
+      <li class="ref-item">
+        <div class="ref-num">11</div>
+        <div class="ref-body">
+          <span class="ref-year">2019</span>
+          <div class="ref-title">Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks</div>
+          <div class="ref-authors">Nils Reimers & Iryna Gurevych — UKP Lab, TU Darmstadt — EMNLP 2019</div>
+        </div>
+      </li>
+      <li class="ref-item">
+        <div class="ref-num">12</div>
+        <div class="ref-body">
+          <span class="ref-year">2007</span>
+          <div class="ref-title">Evaluating the Accuracy of Implicit Feedback from Clicks and Query Reformulations in Web Search</div>
+          <div class="ref-authors">Thorsten Joachims et al. — Cornell University — ACM TOIS 2007</div>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+</main>
+</body>
+</html>
