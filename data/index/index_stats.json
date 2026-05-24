@@ -1,0 +1,21 @@
+{
+  "total_docs": 3000,
+  "avgdl": 3853.4043,
+  "total_terms": 300988,
+  "num_mappers": 6,
+  "epidemic_aggregation": {
+    "gossip_total_docs": 2844,
+    "exact_total_docs": 3000,
+    "gossip_error_pct": 5.2,
+    "rounds_run": 4,
+    "converged_at": null,
+    "total_time_ms": 18.9,
+    "round_times_ms": [
+      18.56,
+      0.29,
+      0.04,
+      0.02
+    ],
+    "note": "Gossip estimates global stats in O(log n) rounds. Allreduce used for exact correctness; gossip_error_pct measures how close the gossip got."
+  }
+}
