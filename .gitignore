@@ -1,36 +1,25 @@
-# ── huge generated data files ─────────────────────────────────────────────────
+﻿# -- huge generated data files --
 data/search.db
 data/search.db-wal
 data/search.db-shm
-data/index/inverted_index.json
-data/index/pagerank.json
-data/index/url_map.json
-data/index/faiss.index
-data/index/faiss_doc_ids.json
 data/index/tfidf_vectors.pkl
-data/index/bert_embeddings.pkl
-data/index/log_analysis.json
 data/live_stats.json
 data/checkpoint.pkl
 data/crawled/
 data/crawled_distributed/
-
-# ── logs ──────────────────────────────────────────────────────────────────────
+# -- logs --
 logs/crawl.jsonl
 logs/metrics.jsonl
-
-# ── python cache ──────────────────────────────────────────────────────────────
+# -- python cache --
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .pytest_cache/
-
-# ── experiments output ────────────────────────────────────────────────────────
+# -- experiments output --
 experiments/graphs/
 experiments/PDC_Project_Report.pdf
-
-# ── env & editor ──────────────────────────────────────────────────────────────
+# -- env & editor --
 .env
 .vscode/
 allfiles.txt

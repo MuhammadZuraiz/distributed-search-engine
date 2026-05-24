@@ -1,0 +1,34 @@
+{
+  "top_terms": [
+    [
+      "distributed",
+      11
+    ],
+    [
+      "computing",
+      8
+    ],
+    [
+      "crawler",
+      1
+    ],
+    [
+      "fast",
+      1
+    ],
+    [
+      "network",
+      1
+    ]
+  ],
+  "position_bias": {},
+  "zero_results": [],
+  "hourly_volume": {
+    "13": 1,
+    "16": 6,
+    "22": 3,
+    "11": 1,
+    "17": 1,
+    "14": 1
+  }
+}
